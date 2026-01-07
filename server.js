@@ -76,7 +76,7 @@ function gerarDadosCPF(cpf) {
 }
 
 // ROTA: Consulta de Telefone
-app.get('/api/telefone/:numero', async (req, res) => {
+app.get('/mutanox/telefone/:numero', async (req, res) => {
   try {
     const { numero } = req.params;
     const numeroLimpo = numero.replace(/[^0-9]/g, '');
@@ -130,7 +130,7 @@ app.get('/api/telefone/:numero', async (req, res) => {
 });
 
 // ROTA: Consulta de CPF
-app.get('/api/cpf/:cpf', async (req, res) => {
+app.get('/mutanox/cpf/:cpf', async (req, res) => {
   try {
     const { cpf } = req.params;
     const cpfLimpo = cpf.replace(/[^0-9]/g, '');
@@ -171,7 +171,7 @@ app.get('/api/cpf/:cpf', async (req, res) => {
 });
 
 // ROTA: Dashboard - Métricas
-app.get('/api/dashboard/metricas', (req, res) => {
+app.get('/mutanox/dashboard/metricas', (req, res) => {
   res.json({
     sucesso: true,
     dados: {
@@ -185,7 +185,7 @@ app.get('/api/dashboard/metricas', (req, res) => {
 });
 
 // ROTA: Dashboard - Histórico de Consultas
-app.get('/api/dashboard/historico/:tipo', (req, res) => {
+app.get('/mutanox/dashboard/historico/:tipo', (req, res) => {
   const { tipo } = req.params;
   const limite = parseInt(req.query.limite) || 50;
 
@@ -209,7 +209,7 @@ app.get('/api/dashboard/historico/:tipo', (req, res) => {
 });
 
 // ROTA: Dashboard - Limpar Histórico
-app.delete('/api/dashboard/historico/:tipo', (req, res) => {
+app.delete('/mutanox/dashboard/historico/:tipo', (req, res) => {
   const { tipo } = req.params;
 
   if (!['telefone', 'cpf'].includes(tipo)) {
@@ -228,7 +228,7 @@ app.delete('/api/dashboard/historico/:tipo', (req, res) => {
 });
 
 // ROTA: Status da API
-app.get('/api/status', (req, res) => {
+app.get('/mutanox/status', (req, res) => {
   res.json({
     sucesso: true,
     status: 'online',
@@ -245,11 +245,11 @@ app.get('/', (req, res) => {
     versao: '1.0.0',
     status: 'online',
     rotas: {
-      telefone: '/api/telefone/:numero',
-      cpf: '/api/cpf/:cpf',
-      dashboardMetricas: '/api/dashboard/metricas',
-      dashboardHistorico: '/api/dashboard/historico/:tipo?limite=50',
-      status: '/api/status'
+      telefone: '/mutanox/telefone/:numero',
+      cpf: '/mutanox/cpf/:cpf',
+      dashboardMetricas: '/mutanox/dashboard/metricas',
+      dashboardHistorico: '/mutanox/dashboard/historico/:tipo?limite=50',
+      status: '/mutanox/status'
     }
   });
 });
@@ -295,5 +295,5 @@ function gerarCPFParaTeste() {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor MutanoX API rodando na porta ${PORT}`);
-  console.log(`📍 Dashboard disponível em: http://localhost:${PORT}/api/dashboard/metricas`);
+  console.log(`📍 Dashboard disponível em: http://localhost:${PORT}/mutanox/dashboard/metricas`);
 });

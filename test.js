@@ -32,7 +32,7 @@ async function testarAPI() {
     const resposta = await fazerRequisicao({
       hostname: HOST,
       port: PORT,
-      path: '/api/status',
+      path: '/mutanox/status',
       method: 'GET'
     });
     console.log('✅ Status:', resposta.status);
@@ -50,7 +50,7 @@ async function testarAPI() {
     const resposta = await fazerRequisicao({
       hostname: HOST,
       port: PORT,
-      path: '/api/telefone/65999701064',
+      path: '/mutanox/telefone/65999701064',
       method: 'GET'
     });
     if (resposta.sucesso) {
@@ -77,7 +77,7 @@ async function testarAPI() {
     const resposta = await fazerRequisicao({
       hostname: HOST,
       port: PORT,
-      path: `/api/cpf/${cpfParaTestar}`,
+      path: `/mutanox/cpf/${cpfParaTestar}`,
       method: 'GET'
     });
     if (resposta.sucesso) {
@@ -103,7 +103,7 @@ async function testarAPI() {
     const resposta = await fazerRequisicao({
       hostname: HOST,
       port: PORT,
-      path: '/api/dashboard/metricas',
+      path: '/mutanox/dashboard/metricas',
       method: 'GET'
     });
     if (resposta.sucesso) {
@@ -125,7 +125,7 @@ async function testarAPI() {
     const resposta = await fazerRequisicao({
       hostname: HOST,
       port: PORT,
-      path: '/api/dashboard/historico/telefone?limite=5',
+      path: '/mutanox/dashboard/historico/telefone?limite=5',
       method: 'GET'
     });
     if (resposta.sucesso) {
@@ -145,7 +145,7 @@ async function testarAPI() {
     const resposta = await fazerRequisicao({
       hostname: HOST,
       port: PORT,
-      path: '/api/telefone/123',
+      path: '/mutanox/telefone/123',
       method: 'GET'
     });
     if (!resposta.sucesso) {
@@ -166,7 +166,7 @@ async function testarAPI() {
     const resposta = await fazerRequisicao({
       hostname: HOST,
       port: PORT,
-      path: '/api/cpf/123456789',
+      path: '/mutanox/cpf/123456789',
       method: 'GET'
     });
     if (!resposta.sucesso) {
