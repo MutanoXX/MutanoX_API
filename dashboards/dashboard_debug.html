@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MutanoX API - Debug Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #0a0f1a 0%, #1a1a2e 50%, #0a0f1a 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .cyber-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cyber-card:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .neon-text {
+            text-shadow: 0 0 30px rgba(16, 185, 129, 0.6);
+        }
+
+        .neon-glow {
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.3);
+        }
+
+        .status-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .terminal {
+            background: #0a0f1a;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .terminal::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .terminal::-webkit-scrollbar-track {
+            background: #0a0f1a;
+        }
+
+        .terminal::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        .terminal::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .log-entry {
+            padding: 6px 12px;
+            border-left: 2px solid transparent;
+            margin: 2px 0;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.2s;
+        }
+
+        .log-entry:hover {
+            background: rgba(51, 65, 85, 0.3);
+            border-left-color: #10b981;
+        }
+
+        .log-success { color: #10b981; }
+        .log-error { color: #ef4444; }
+        .log-warning { color: #f59e0b; }
+        .log-info { color: #3b82f6; }
+        .log-auth { color: #a855f7; }
+        .log-admin { color: #fbbf24; }
+        .log-debug { color: #f97316; }
+
+        .metric-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10b981, #6366f1);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .endpoint-item {
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .endpoint-item:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            transform: translateX(4px);
+        }
+
+        .endpoint-item.disabled {
+            opacity: 0.5;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 280px;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .copy-btn {
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .tab-btn {
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .progress-bar {
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.5s ease-out;
+        }
+
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-textPrimary">
+    <!-- Debug Console -->
+    <div id="debug-console" class="fixed bottom-4 left-4 z-[100] w-96 h-64 bg-black/95 rounded-xl border border-gray-700 overflow-hidden hidden">
+        <div class="p-3 bg-gray-800 flex justify-between items-center border-b border-gray-700">
+            <span class="text-xs font-mono text-green-400">DEBUG CONSOLE</span>
+            <button onclick="toggleDebugConsole()" class="text-xs text-gray-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="debug-content" class="p-3 font-mono text-[10px] text-green-400 overflow-y-auto h-48 space-y-1">
+        </div>
+    </div>
+
+    <!-- Show Debug Console Button -->
+    <button id="show-debug-btn" onclick="toggleDebugConsole()" class="fixed bottom-4 left-4 z-[90] bg-gray-800 text-white px-3 py-2 rounded-lg text-xs font-mono hover:bg-gray-700 hidden">
+        <i class="fas fa-terminal mr-1"></i> DEBUG
+    </button>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 modal-overlay">
+        <div class="cyber-card p-10 w-full max-w-md border-2 border-primary/30 neon-glow">
+            <div class="text-center mb-8">
+                <div class="w-24 h-24 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-primary/20 mx-auto">
+                    <i class="fas fa-shield-halved text-5xl text-primary neon-text"></i>
+                </div>
+                <h1 class="text-5xl font-black tracking-tight neon-text text-primary mb-2">MUTANOX</h1>
+                <p class="text-textSecondary text-sm tracking-widest uppercase font-medium">Debug Enterprise Dashboard</p>
+                <p class="text-textMuted text-xs mt-2">Professional API Management System v3.1 DEBUG</p>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-textSecondary mb-2 uppercase tracking-wider">Admin API Key</label>
+                    <input type="password" id="admin-key-input" class="w-full bg-surface border border-border p-4 rounded-xl text-center font-mono text-primary text-lg">
+                </div>
+                <button onclick="login()" class="w-full bg-gradient-to-r from-primary to-primaryDark text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm font-bold hover:from-primaryDark hover:to-primary transition-all">
+                    <i class="fas fa-lock-open mr-2"></i> Authenticate
+                </button>
+                <p id="login-error" class="text-danger text-sm text-center hidden font-mono font-medium">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Authentication Failed: Invalid Admin Key
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[110] space-y-2"></div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-content" class="hidden">
+        <!-- Header -->
+        <header class="cyber-card p-4 mb-6">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+                            <i class="fas fa-server text-primary text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-black tracking-tight">MUTANOX <span class="text-primary neon-text">DEBUG</span></h1>
+                            <p class="text-textMuted text-xs font-mono">api.mutanox.io // v3.1.0 // Debug Enterprise</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Show Debug Button -->
+                    <button onclick="toggleDebugConsole()" class="cyber-card px-4 py-2.5 rounded-xl hover:bg-gray-700/50 transition-all text-gray-300">
+                        <i class="fas fa-bug text-sm"></i> Debug Console
+                    </button>
+
+                    <!-- Auto-refresh Toggle -->
+                    <div class="flex items-center gap-2 cyber-card px-4 py-2.5 rounded-xl">
+                        <span class="text-textMuted text-xs font-bold uppercase tracking-wider">Auto-refresh</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="auto-refresh-toggle" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                        <span id="refresh-rate" class="text-primary text-xs font-bold font-mono">2s</span>
+                    </div>
+
+                    <!-- Refresh Button -->
+                    <button onclick="forceRefresh()" class="cyber-card px-4 py-2.5 rounded-xl hover:bg-primary/20 transition-all text-primary group">
+                        <i class="fas fa-sync-alt text-lg group-hover:rotate-180 transition-transform duration-500" id="refresh-icon"></i>
+                    </button>
+
+                    <!-- Logout -->
+                    <button onclick="logout()" class="cyber-card px-4 py-2.5 rounded-xl hover:bg-danger/20 transition-all text-danger group">
+                        <i class="fas fa-power-off text-lg group-hover:scale-110 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <div class="metric-card cyber-card p-6 bg-gradient-to-br from-surface/80 to-background/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-textMuted text-xs font-bold uppercase tracking-wider mb-1">Total Requests</p>
+                        <h2 id="stat-total" class="text-4xl font-black font-mono">0</h2>
+                    </div>
+                    <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-chart-line text-primary text-xl"></i>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 text-xs">
+                    <span class="text-primary font-bold"><i class="fas fa-bolt mr-1"></i><span id="stat-rate">0</span>/s</span>
+                    <span class="text-textMuted">current rate</span>
+                </div>
+            </div>
+
+            <div class="metric-card cyber-card p-6 bg-gradient-to-br from-surface/80 to-background/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-textMuted text-xs font-bold uppercase tracking-wider mb-1">Active Keys</p>
+                        <h2 id="stat-keys" class="text-4xl font-black font-mono text-primary">0</h2>
+                    </div>
+                    <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-key text-primary text-xl"></i>
+                    </div>
+                </div>
+                <div class="text-xs text-textMuted">
+                    <span class="text-textSecondary">Total:</span> <span id="stat-total-keys" class="font-mono">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card cyber-card p-6 bg-gradient-to-br from-surface/80 to-background/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-textMuted text-xs font-bold uppercase tracking-wider mb-1">Endpoint Hits</p>
+                        <h2 id="stat-endpoints" class="text-4xl font-black font-mono text-secondary">0</h2>
+                    </div>
+                    <div class="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-network-wired text-secondary text-xl"></i>
+                    </div>
+                </div>
+                <div class="text-xs text-textMuted">
+                    <span class="text-textSecondary">Types:</span> <span id="stat-types" class="font-mono">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card cyber-card p-6 bg-gradient-to-br from-surface/80 to-background/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-textMuted text-xs font-bold uppercase tracking-wider mb-1">System Uptime</p>
+                        <h2 id="stat-uptime" class="text-4xl font-black font-mono text-warning">0s</h2>
+                    </div>
+                    <div class="w-12 h-12 bg-warning/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-clock text-warning text-xl"></i>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="status-pulse w-2.5 h-2.5 bg-primary rounded-full"></span>
+                    <span class="text-primary font-semibold uppercase tracking-wider">ONLINE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Content -->
+        <div class="bg-surface/30 backdrop-blur-sm rounded-2xl p-1 mb-6 flex gap-1 overflow-x-auto">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </button>
+            <button onclick="switchTab('keys')" id="tab-keys" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider text-textSecondary">
+                <i class="fas fa-key"></i> API Keys
+            </button>
+            <button onclick="switchTab('endpoints')" id="tab-endpoints" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider text-textSecondary">
+                <i class="fas fa-network-wired"></i> Endpoints
+            </button>
+            <button onclick="switchTab('logs')" id="tab-logs" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider text-textSecondary">
+                <i class="fas fa-terminal"></i> Logs
+            </button>
+        </div>
+
+        <!-- Dashboard Tab Content -->
+        <div id="content-dashboard" class="mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Endpoint Statistics -->
+                <div class="cyber-card">
+                    <div class="p-5 border-b border-border flex justify-between items-center">
+                        <h3 class="text-lg font-black flex items-center gap-2">
+                            <i class="fas fa-chart-pie text-primary"></i>
+                            Endpoint Distribution
+                        </h3>
+                        <div class="flex gap-2">
+                            <select id="chart-type" onchange="updateChartType()" class="bg-surface border border-border rounded-lg px-3 py-1.5 text-xs font-medium">
+                                <option value="doughnut">Doughnut</option>
+                                <option value="bar">Bar Chart</option>
+                                <option value="line">Line Chart</option>
+                                <option value="radar">Radar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="chart-container">
+                                <canvas id="endpointChart"></canvas>
+                            </div>
+                            <div id="endpoint-list" class="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                                <div class="flex items-center justify-center h-[300px]">
+                                    <div class="text-center">
+                                        <i class="fas fa-chart-pie text-3xl text-textMuted mb-3"></i>
+                                        <p class="text-textMuted text-sm">Aguardando dados de endpoints...</p>
+                                        <p class="text-textMuted text-xs">As requisições aparecerão aqui</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Request Timeline Chart -->
+                <div class="cyber-card">
+                    <div class="p-5 border-b border-border flex justify-between items-center">
+                        <h3 class="text-lg font-black flex items-center gap-2">
+                            <i class="fas fa-chart-area text-secondary"></i>
+                            Request Timeline
+                        </h3>
+                        <div class="flex gap-2 text-xs">
+                            <span class="text-textMuted">Últimos 20 pontos</span>
+                            <span class="status-pulse w-2 h-2 bg-success rounded-full"></span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <div class="chart-container">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Keys Tab Content -->
+        <div id="content-keys" class="hidden mb-6">
+            <div class="cyber-card">
+                <div class="p-5 border-b border-border flex justify-between items-center">
+                    <h3 class="text-lg font-black flex items-center gap-2">
+                        <i class="fas fa-key text-primary"></i>
+                        API Keys Management
+                    </h3>
+                    <button onclick="createNewKey()" class="bg-gradient-to-r from-primary to-primaryDark text-white text-xs font-bold px-4 py-2.5 rounded-xl uppercase tracking-wider">
+                        <i class="fas fa-plus mr-1"></i> GENERATE
+                    </button>
+                </div>
+                <div class="p-5">
+                    <div id="keys-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2">
+                        <div class="flex items-center justify-center col-span-2 py-12">
+                            <div class="text-center">
+                                <i class="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+                                <p class="text-textMuted text-lg">Loading API Keys...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Endpoints Tab Content -->
+        <div id="content-endpoints" class="hidden mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Endpoint List -->
+                <div class="lg:col-span-2 cyber-card">
+                    <div class="p-5 border-b border-border">
+                        <h3 class="text-lg font-black flex items-center gap-2">
+                            <i class="fas fa-network-wired text-primary"></i>
+                            Endpoints Configuration
+                        </h3>
+                    </div>
+                    <div class="p-5">
+                        <div id="endpoints-management" class="space-y-3">
+                            <div class="flex items-center justify-center py-12">
+                                <div class="text-center">
+                                    <i class="fas fa-server text-3xl text-textMuted mb-3"></i>
+                                    <p class="text-textMuted text-sm">Loading endpoints...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Tab Content -->
+        <div id="content-logs" class="hidden mb-6">
+            <div class="cyber-card">
+                <div class="p-5 border-b border-border flex justify-between items-center">
+                    <h3 class="text-lg font-black flex items-center gap-2">
+                        <i class="fas fa-terminal text-primary"></i>
+                        System Logs
+                    </h3>
+                    <div class="flex gap-2">
+                        <button onclick="clearLogs()" class="text-xs text-textMuted hover:text-white">
+                            <i class="fas fa-trash mr-1"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div id="terminal" class="terminal p-5 h-[500px] overflow-y-auto">
+                    <div class="text-textMuted text-center py-12">
+                        <i class="fas fa-terminal text-4xl mb-4"></i>
+                        <p>Aguardando logs do sistema...</p>
+                        <p class="text-textMuted text-sm mt-2">As requisições e logs aparecerão aqui em tempo real</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DEBUG HELPER
+        function logDebug(level, ...args) {
+            const debugContent = document.getElementById('debug-content');
+            if (!debugContent) return;
+            
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const colors = {
+                info: 'text-blue-400',
+                success: 'text-green-400',
+                error: 'text-red-400',
+                warn: 'text-yellow-400'
+            };
+            
+            const entry = document.createElement('div');
+            entry.className = 'mb-1';
+            entry.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> <span class="font-bold ${colors[level] || 'text-gray-300"}">[${level.toUpperCase()}]</span> ${args.map(arg => {
+                if (typeof arg === 'object') {
+                    return `<pre class="text-gray-300">${JSON.stringify(arg, null, 2)}</pre>`;
+                }
+                return String(arg);
+            }).join(' ')}`;
+            
+            debugContent.insertBefore(entry, debugContent.firstChild);
+            
+            // Keep only last 50 entries
+            while (debugContent.children.length > 50) {
+                debugContent.removeChild(debugContent.lastChild);
+            }
+        }
+
+        // Configuration
+        const API_BASE = '';
+        let adminKey = localStorage.getItem('mutanox_admin_key') || '';
+        let refreshInterval = null;
+        let refreshRate = 2000;
+        let lastData = null;
+        let chartAnimation = true;
+        let endpointChart = null;
+        let timelineChart = null;
+        let logFilter = 'all';
+        let currentTab = 'dashboard';
+        let currentChartType = 'doughnut';
+        let requestHistory = [];
+
+        // Endpoint configurations
+        const endpointConfigs = {
+            'cpf': {
+                name: 'Consultar CPF',
+                description: 'Consulta completa de CPF com dados básicos, econômicos e endereços',
+                method: 'GET',
+                path: '/api/consultas',
+                params: 'tipo=cpf&cpf=XXX',
+                icon: 'fa-id-card',
+                color: '#10b981'
+            },
+            'nome': {
+                name: 'Consultar Nome',
+                description: 'Busca por nome completo com múltiplos resultados',
+                method: 'GET',
+                path: '/api/consultas',
+                params: 'tipo=nome&q=XXX',
+                icon: 'fa-user',
+                color: '#6366f1'
+            },
+            'numero': {
+                name: 'Consultar Telefone',
+                description: 'Consulta de telefone com dados da pessoa associada',
+                method: 'GET',
+                path: '/api/consultas',
+                params: 'tipo=numero&q=XXX',
+                icon: 'fa-phone',
+                color: '#f59e0b'
+            }
+        };
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            logDebug('info', 'DOM loaded, checking for admin key...');
+            if (adminKey) {
+                logDebug('success', 'Admin key found in localStorage:', adminKey);
+                showDashboard();
+            } else {
+                logDebug('warn', 'No admin key in localStorage');
+                document.getElementById('show-debug-btn').classList.remove('hidden');
+            }
+        });
+
+        // Login function
+        async function login() {
+            const key = document.getElementById('admin-key-input').value;
+            logDebug('info', 'Attempting login with key:', key);
+            
+            if (!key) {
+                showToast('error', 'Please enter an API key');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/validate?apikey=${key}`);
+                logDebug('info', 'Login response status:', response.status);
+                
+                if (response.ok) {
+                    adminKey = key;
+                    localStorage.setItem('mutanox_admin_key', key);
+                    logDebug('success', 'Login successful, saving to localStorage');
+                    showToast('success', 'Authentication successful');
+                    showDashboard();
+                } else {
+                    const errorEl = document.getElementById('login-error');
+                    errorEl.classList.remove('hidden');
+                    setTimeout(() => errorEl.classList.add('hidden'), 3000);
+                    logDebug('error', 'Login failed: Invalid key');
+                }
+            } catch (error) {
+                logDebug('error', 'Login error:', error.message);
+                showToast('error', 'Connection error: ' + error.message);
+            }
+        }
+
+        function logout() {
+            logDebug('info', 'Logging out...');
+            localStorage.removeItem('mutanox_admin_key');
+            adminKey = '';
+            clearInterval(refreshInterval);
+            location.reload();
+        }
+
+        function showDashboard() {
+            logDebug('info', 'Showing dashboard...');
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.remove('hidden');
+            document.getElementById('show-debug-btn').classList.remove('hidden');
+            initCharts();
+            startAutoRefresh();
+            updateServerTime();
+        }
+
+        // Tab switching
+        function switchTab(tab) {
+            logDebug('info', 'Switching to tab:', tab);
+            currentTab = tab;
+            
+            // Hide all content
+            ['dashboard', 'keys', 'endpoints', 'logs'].forEach(t => {
+                const el = document.getElementById(`content-${t}`);
+                if (el) el.classList.add('hidden');
+                
+                const btn = document.getElementById(`tab-${t}`);
+                if (btn) btn.classList.remove('active');
+            });
+            
+            // Show selected content
+            const contentEl = document.getElementById(`content-${tab}`);
+            if (contentEl) contentEl.classList.remove('hidden');
+            
+            const btnEl = document.getElementById(`tab-${tab}`);
+            if (btnEl) btnEl.classList.add('active');
+        }
+
+        // Charts initialization
+        function initCharts() {
+            logDebug('info', 'Initializing charts...');
+            
+            try {
+                destroyCharts();
+                
+                const endpointCtx = document.getElementById('endpointChart');
+                logDebug('info', 'endpointChart canvas:', endpointCtx);
+                
+                if (!endpointCtx) {
+                    logDebug('error', 'endpointChart canvas not found!');
+                    return;
+                }
+                
+                endpointChart = new Chart(endpointCtx, {
+                    type: currentChartType,
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: [
+                                '#10b981', '#6366f1', '#f59e0b', '#ef4444',
+                                '#8b5cf6', '#06b6d4', '#f97316'
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                titleColor: '#f8fafc',
+                                bodyColor: '#94a3b8',
+                                borderColor: '#334155',
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 8
+                            }
+                        },
+                        cutout: '70%',
+                        animation: {
+                            animateScale: chartAnimation,
+                            animateRotate: chartAnimation
+                        }
+                    }
+                });
+
+                logDebug('success', 'endpointChart created successfully');
+
+                // Timeline Chart
+                const timelineCtx = document.getElementById('timelineChart');
+                logDebug('info', 'timelineChart canvas:', timelineCtx);
+                
+                if (!timelineCtx) {
+                    logDebug('error', 'timelineChart canvas not found!');
+                    return;
+                }
+                
+                timelineChart = new Chart(timelineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Total Requests',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                titleColor: '#f8fafc',
+                                bodyColor: '#94a3b8',
+                                borderColor: '#334155',
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(51, 65, 85, 0.3)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(51, 65, 85, 0.3)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                });
+
+                logDebug('success', 'timelineChart created successfully');
+            } catch (error) {
+                logDebug('error', 'Error initializing charts:', error.message);
+                console.error('Charts error:', error);
+            }
+        }
+
+        // Destroy all charts
+        function destroyCharts() {
+            logDebug('info', 'Destroying existing charts...');
+            
+            if (endpointChart) {
+                try {
+                    endpointChart.destroy();
+                    logDebug('info', 'endpointChart destroyed');
+                } catch (error) {
+                    logDebug('error', 'Error destroying endpointChart:', error.message);
+                }
+                endpointChart = null;
+            }
+            
+            if (timelineChart) {
+                try {
+                    timelineChart.destroy();
+                    logDebug('info', 'timelineChart destroyed');
+                } catch (error) {
+                    logDebug('error', 'Error destroying timelineChart:', error.message);
+                }
+                timelineChart = null;
+            }
+        }
+
+        // Auto refresh
+        function startAutoRefresh() {
+            logDebug('info', 'Starting auto refresh, rate:', refreshRate);
+            refreshData();
+            refreshInterval = setInterval(refreshData, refreshRate);
+        }
+
+        // Toggle auto refresh
+        document.getElementById('auto-refresh-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                logDebug('info', 'Auto-refresh enabled');
+                refreshInterval = setInterval(refreshData, refreshRate);
+            } else {
+                logDebug('info', 'Auto-refresh disabled');
+                clearInterval(refreshInterval);
+            }
+        });
+
+        // Force refresh
+        function forceRefresh() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('fa-spin');
+            logDebug('info', 'Force refresh triggered');
+            
+            refreshData().finally(() => {
+                icon.classList.remove('fa-spin');
+                logDebug('info', 'Force refresh completed');
+            });
+        }
+
+        // Main refresh function
+        async function refreshData() {
+            logDebug('info', '========================================');
+            logDebug('info', 'Starting refreshData...');
+            
+            try {
+                const response = await fetch(`/api/admin/stats-readonly?apikey=${adminKey}`);
+                logDebug('info', 'Fetch response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: Failed to fetch stats`);
+                }
+
+                const data = await response.json();
+                logDebug('info', 'Response data:', data);
+                
+                if (!data.success) {
+                    throw new Error('API returned success=false');
+                }
+
+                // Check if data changed
+                const newData = JSON.stringify(data);
+                if (lastData === newData) {
+                    logDebug('info', 'Data unchanged, skipping update');
+                    return;
+                }
+                lastData = newData;
+                
+                logDebug('success', 'Data changed, updating UI...');
+                updateStats(data);
+                
+                if (currentTab === 'keys') {
+                    updateKeys(data.keys);
+                } else if (currentTab === 'endpoints') {
+                    updateEndpoints(data.endpointHits);
+                } else if (currentTab === 'logs') {
+                    await updateLogs();
+                } else if (currentTab === 'dashboard') {
+                    updateKeys(data.keys);
+                    updateEndpoints(data.endpointHits);
+                }
+
+                logDebug('success', 'Refresh completed successfully');
+
+            } catch (error) {
+                logDebug('error', 'Refresh error:', error.message, error.stack);
+                console.error('Refresh error:', error);
+                showToast('error', 'Refresh error: ' + error.message);
+            }
+        }
+
+        // Update stats
+        function updateStats(data) {
+            logDebug('info', 'Updating stats...');
+            
+            try {
+                const currentTotal = data.totalRequests || 0;
+                const uptime = data.uptime || 0;
+                
+                // Calculate rate
+                const rate = uptime > 0 ? (currentTotal / (uptime / 1000)).toFixed(2) : '0';
+                
+                logDebug('info', 'Current total:', currentTotal);
+                logDebug('info', 'Uptime:', uptime, 'ms');
+                logDebug('info', 'Rate:', rate, '/s');
+                
+                const statTotal = document.getElementById('stat-total');
+                if (statTotal) {
+                    statTotal.textContent = currentTotal.toLocaleString();
+                    logDebug('success', 'stat-total updated to:', currentTotal);
+                } else {
+                    logDebug('error', 'stat-total element not found!');
+                }
+                
+                const statRate = document.getElementById('stat-rate');
+                if (statRate) {
+                    statRate.textContent = rate;
+                } else {
+                    logDebug('error', 'stat-rate element not found!');
+                }
+
+                const activeKeys = Object.values(data.keys).filter(k => k.active !== false).length;
+                const statKeys = document.getElementById('stat-keys');
+                if (statKeys) {
+                    statKeys.textContent = activeKeys;
+                } else {
+                    logDebug('error', 'stat-keys element not found!');
+                }
+                
+                document.getElementById('stat-total-keys').textContent = Object.keys(data.keys).length;
+
+                const totalHits = Object.values(data.endpointHits).reduce((sum, val) => sum + val, 0);
+                const statEndpoints = document.getElementById('stat-endpoints');
+                if (statEndpoints) {
+                    statEndpoints.textContent = totalHits.toLocaleString();
+                } else {
+                    logDebug('error', 'stat-endpoints element not found!');
+                }
+
+                document.getElementById('stat-types').textContent = Object.keys(data.endpointHits).length;
+
+                // Update uptime - FIX PARA NaN
+                const statUptime = document.getElementById('stat-uptime');
+                if (statUptime) {
+                    if (data.startTime && !isNaN(data.startTime)) {
+                        const uptimeSeconds = Math.floor((Date.now() - data.startTime) / 1000);
+                        const hours = Math.floor(uptimeSeconds / 3600);
+                        const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+                        const seconds = uptimeSeconds % 60;
+                        const formatted = `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+                        
+                        statUptime.textContent = formatted;
+                        logDebug('success', 'Uptime updated to:', formatted);
+                    } else {
+                        logDebug('warn', 'startTime is invalid:', data.startTime);
+                        statUptime.textContent = '0s';
+                    }
+                } else {
+                    logDebug('error', 'stat-uptime element not found!');
+                }
+
+                // Update timeline
+                updateTimeline(currentTotal);
+                
+                logDebug('success', 'Stats updated successfully');
+            } catch (error) {
+                logDebug('error', 'Error updating stats:', error.message, error.stack);
+            }
+        }
+
+        // Update timeline chart
+        function updateTimeline(totalRequests) {
+            logDebug('info', 'Updating timeline with totalRequests:', totalRequests);
+            
+            try {
+                const now = new Date();
+                const timeLabel = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                requestHistory.push({ time: timeLabel, requests: totalRequests });
+                
+                if (requestHistory.length > 20) {
+                    requestHistory.shift();
+                }
+
+                if (timelineChart) {
+                    timelineChart.data.labels = requestHistory.map(h => h.time);
+                    timelineChart.data.datasets[0].data = requestHistory.map(h => h.requests);
+                    timelineChart.update('none');
+                    logDebug('success', 'Timeline chart updated');
+                } else {
+                    logDebug('error', 'timelineChart not initialized!');
+                }
+            } catch (error) {
+                logDebug('error', 'Error updating timeline:', error.message);
+            }
+        }
+
+        // Update keys
+        function updateKeys(keys) {
+            logDebug('info', 'Updating keys, total:', Object.keys(keys).length);
+            
+            try {
+                const container = document.getElementById('keys-list');
+                const keysArray = Object.entries(keys);
+
+                if (keysArray.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center col-span-2 py-12">
+                            <i class="fas fa-key text-4xl text-textMuted mb-4"></i>
+                            <p class="text-textMuted">Nenhuma API key encontrada</p>
+                            <button onclick="createNewKey()" class="bg-gradient-to-r from-primary to-primaryDark text-white text-xs font-bold px-5 py-2.5 rounded-xl uppercase tracking-wider mt-4">
+                                <i class="fas fa-plus mr-2"></i> Criar Primeira Key
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = keysArray.map(([key, info]) => {
+                    const isActive = info.active !== false;
+                    const isExpired = info.expirationDate && new Date(info.expirationDate) < new Date();
+                    
+                    return `
+                        <div class="cyber-card p-5 rounded-xl ${!isActive ? 'opacity-50' : ''}">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 ${info.role === 'admin' ? 'bg-danger/10' : 'bg-primary/10'} rounded-xl flex items-center justify-center">
+                                        <i class="fas ${info.role === 'admin' ? 'fa-shield-alt' : 'fa-key'} ${info.role === 'admin' ? 'text-danger' : 'text-primary'}"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-base">${info.owner}</p>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <span class="text-xs px-2 py-0.5 rounded-lg font-bold uppercase ${
+                                                info.role === 'admin' 
+                                                    ? 'bg-danger/10 text-danger border border-danger/20' 
+                                                    : 'bg-primary/10 text-primary border border-primary/20'
+                                            }">
+                                                ${info.role}
+                                            </span>
+                                            ${isExpired 
+                                                ? '<span class="text-xs px-2 py-0.5 rounded-lg font-bold uppercase bg-danger/10 text-danger border border-danger/20">EXPIRADO</span>'
+                                                : '<span class="text-xs px-2 py-0.5 rounded-lg font-bold uppercase bg-success/10 text-success border border-success/20">ATIVO</span>'
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="copyToClipboard('${key}')" class="copy-btn w-9 h-9 bg-surfaceLight rounded-lg flex items-center justify-center hover:bg-primary hover:text-white transition-all" title="Copiar Key">
+                                        <i class="fas fa-copy text-sm"></i>
+                                    </button>
+                                    <button onclick="toggleKey('${key}')" class="w-9 h-9 bg-surfaceLight rounded-lg flex items-center justify-center hover:bg-warning hover:text-white transition-all" title="${isActive ? 'Desativar' : 'Ativar'}">
+                                        <i class="fas fa-power-off text-sm"></i>
+                                    </button>
+                                    ${key !== adminKey ? `
+                                        <button onclick="deleteKey('${key}')" class="w-9 h-9 bg-surfaceLight rounded-lg flex items-center justify-center hover:bg-danger hover:text-white transition-all" title="Deletar">
+                                            <i class="fas fa-trash text-sm"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="cyber-card p-3 rounded-lg bg-black/30">
+                                    <code class="text-xs text-primary break-all">${key.substring(0, 20)}${key.length > 20 ? '...' : ''}</code>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <p class="text-textMuted text-xs uppercase tracking-wider mb-1">Usage</p>
+                                    <p class="font-mono text-lg">${info.usageCount || 0}</p>
+                                </div>
+                                <div>
+                                    <p class="text-textMuted text-xs uppercase tracking-wider mb-1">Last Used</p>
+                                    <p class="font-mono text-xs">${info.lastUsed ? new Date(info.lastUsed).toLocaleString('pt-BR') : 'Never'}</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <p class="text-textMuted text-xs uppercase tracking-wider mb-1">Created</p>
+                                    <p class="font-mono text-xs">${new Date(info.createdAt).toLocaleString('pt-BR')}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                logDebug('success', 'Keys updated successfully');
+            } catch (error) {
+                logDebug('error', 'Error updating keys:', error.message, error.stack);
+            }
+        }
+
+        // Update endpoints
+        function updateEndpoints(endpointHits) {
+            logDebug('info', 'Updating endpoints...');
+            
+            try {
+                const container = document.getElementById('endpoints-management');
+                const list = document.getElementById('endpoint-list');
+                const endpoints = Object.keys(endpointConfigs);
+
+                if (Object.keys(endpointHits).length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12">
+                            <i class="fas fa-network-wired text-4xl text-textMuted mb-4"></i>
+                            <p class="text-textMuted">Nenhum endpoint utilizado ainda</p>
+                            <p class="text-textMuted text-xs">As requisições aparecerão aqui</p>
+                        </div>
+                    `;
+                    if (list) {
+                        list.innerHTML = `
+                            <div class="text-center py-12">
+                                <i class="fas fa-chart-pie text-3xl text-textMuted mb-3"></i>
+                                <p>Aguardando dados de endpoints...</p>
+                            </div>
+                        `;
+                    }
+                    return;
+                }
+
+                container.innerHTML = endpoints.map(endpoint => {
+                    const config = endpointConfigs[endpoint];
+                    const hits = endpointHits[endpoint] || 0;
+                    const totalHits = Object.values(endpointHits).reduce((sum, val) => sum + val, 0);
+                    const percentage = totalHits > 0 ? ((hits / totalHits) * 100).toFixed(1) : 0;
+                    const isActive = hits > 0;
+
+                    return `
+                        <div class="endpoint-item cyber-card p-4 rounded-xl ${!isActive ? 'disabled' : ''}">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-12 h-12 bg-${config.color}/10 rounded-xl flex items-center justify-center">
+                                    <i class="fas ${config.icon} text-${config.color} text-xl"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-bold text-base">${config.name}</p>
+                                    <p class="text-textMuted text-xs">${config.description}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-black text-lg font-mono">${hits}</p>
+                                    <p class="text-textMuted text-xs">requests</p>
+                                </div>
+                            </div>
+                            <div class="progress-bar h-2">
+                                <div class="progress-fill h-full" style="width: ${percentage}%"></div>
+                            </div>
+                            <div class="flex items-center gap-2 mt-2 text-xs text-textMuted">
+                                <span>${percentage}% do total</span>
+                                ${isActive ? '<span class="text-success"><i class="fas fa-circle text-[8px] mr-1"></i> Ativo</span>' : '<span class="text-textMuted"><i class="fas fa-circle text-[8px] mr-1"></i> Inativo</span>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                if (list) {
+                    list.innerHTML = Object.entries(endpointHits).map(([endpoint, hits]) => {
+                        const config = endpointConfigs[endpoint];
+                        const totalHits = Object.values(endpointHits).reduce((sum, val) => sum + val, 0);
+                        const percentage = totalHits > 0 ? ((hits / totalHits) * 100).toFixed(1) : 0;
+
+                        return `
+                            <div class="cyber-card p-3 rounded-xl mb-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-${config.color}/10 rounded-lg flex items-center justify-center">
+                                        <i class="fas ${config.icon} text-${config.color}"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="font-bold text-sm">${config.name}</p>
+                                        <p class="text-textMuted text-xs">${hits} requests (${percentage}%)</p>
+                                    </div>
+                                    <div class="progress-bar h-1 w-24">
+                                        <div class="progress-fill h-full" style="width: ${percentage}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+                logDebug('success', 'Endpoints updated successfully');
+            } catch (error) {
+                logDebug('error', 'Error updating endpoints:', error.message, error.stack);
+            }
+        }
+
+        // Update logs
+        async function updateLogs() {
+            logDebug('info', 'Updating logs...');
+            
+            try {
+                const response = await fetch(`/api/admin/logs?apikey=${adminKey}`);
+                logDebug('info', 'Logs response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch logs');
+                }
+
+                const data = await response.json();
+                logDebug('info', 'Logs data:', data);
+                
+                if (!data.success) {
+                    throw new Error('Invalid logs response');
+                }
+
+                const terminal = document.getElementById('terminal');
+                
+                if (data.logs.length === 0) {
+                    terminal.innerHTML = `
+                        <div class="text-center py-12">
+                            <i class="fas fa-check-circle text-success text-4xl mb-4"></i>
+                            <p>Nenhum log registrado ainda</p>
+                            <p class="text-textMuted text-xs mt-2">As requisições aparecerão aqui</p>
+                        </div>
+                    `;
+                    logDebug('info', 'No logs to display');
+                    return;
+                }
+
+                terminal.innerHTML = data.logs.map(log => {
+                    const logClass = `log-${log.type.toLowerCase()}`;
+                    const timestamp = new Date(log.timestamp).toLocaleTimeString('pt-BR');
+                    return `
+                        <div class="log-entry ${logClass}">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-mono text-xs text-textMuted">[${timestamp}]</span>
+                                <span class="font-bold uppercase text-xs tracking-wider">${log.type}</span>
+                            </div>
+                            <p class="text-sm">${log.message}</p>
+                            ${log.details ? `<p class="text-xs text-textMuted font-mono mt-1">${log.details}</p>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+                logDebug('success', 'Logs updated successfully');
+            } catch (error) {
+                logDebug('error', 'Error updating logs:', error.message, error.stack);
+            }
+        }
+
+        // Key management functions
+        async function createNewKey() {
+            const owner = prompt('Nome do proprietário da API Key:');
+            if (!owner) {
+                showToast('error', 'Por favor, insira um nome');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/keys?owner=${encodeURIComponent(owner)}&role=user&apikey=${adminKey}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    logDebug('success', 'New key created:', data.key);
+                    showToast('success', `API Key Generated: ${data.key.substring(0, 10)}...`);
+                    copyToClipboard(data.key);
+                    refreshData();
+                } else {
+                    logDebug('error', 'Failed to generate key:', data.error);
+                    showToast('error', 'Falha ao gerar key: ' + data.error);
+                }
+            } catch (error) {
+                logDebug('error', 'Error creating key:', error.message);
+                showToast('error', 'Erro: ' + error.message);
+            }
+        }
+
+        async function toggleKey(key) {
+            logDebug('info', 'Toggling key:', key);
+            
+            try {
+                const response = await fetch(`/api/admin/toggle?target=${encodeURIComponent(key)}&apikey=${adminKey}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    logDebug('success', 'Key toggled successfully');
+                    showToast('success', `Key status changed`);
+                    refreshData();
+                }
+            } catch (error) {
+                logDebug('error', 'Error toggling key:', error.message);
+                showToast('error', 'Erro: ' + error.message);
+            }
+        }
+
+        async function deleteKey(key) {
+            if (key === adminKey) {
+                showToast('error', 'Não pode deletar a key do admin');
+                return;
+            }
+
+            if (!confirm('Tem certeza que deseja deletar esta API key?')) {
+                return;
+            }
+
+            logDebug('info', 'Deleting key:', key);
+            
+            try {
+                const response = await fetch(`/api/admin/keys?target=${encodeURIComponent(key)}&apikey=${adminKey}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    logDebug('success', 'Key deleted successfully');
+                    showToast('success', 'API key deletada');
+                    refreshData();
+                }
+            } catch (error) {
+                logDebug('error', 'Error deleting key:', error.message);
+                showToast('error', 'Erro: ' + error.message);
+            }
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('success', 'Copiado para clipboard!');
+                logDebug('success', 'Copied to clipboard:', text.substring(0, 20) + '...');
+            } catch (error) {
+                logDebug('error', 'Failed to copy:', error.message);
+                showToast('error', 'Falha ao copiar');
+            }
+        }
+
+        // Other functions
+        function clearLogs() {
+            document.getElementById('terminal').innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fas fa-check-circle text-success text-4xl mb-4"></i>
+                    <p>Logs limpos com sucesso</p>
+                </div>
+            `;
+            showToast('success', 'Logs limpos');
+            logDebug('info', 'Logs cleared');
+        }
+
+        // Update chart type
+        function updateChartType() {
+            const newType = document.getElementById('chart-type').value;
+            logDebug('info', 'Changing chart type from', currentChartType, 'to', newType);
+            
+            if (newType !== currentChartType) {
+                currentChartType = newType;
+                logDebug('info', 'Destroying and recreating chart...');
+                destroyCharts();
+                initCharts();
+                refreshData();
+            }
+        }
+
+        // Update server time
+        function updateServerTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        // Toast notification
+        function showToast(type, message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-success text-black',
+                error: 'bg-danger text-white',
+                info: 'bg-secondary text-white',
+                warning: 'bg-warning text-black'
+            };
+
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle',
+                warning: 'fa-exclamation-triangle'
+            };
+
+            toast.className = `toast ${colors[type]} px-5 py-3 rounded-xl flex items-center gap-3 shadow-xl`;
+            toast.innerHTML = `
+                <i class="fas ${icons[type]} text-lg"></i>
+                <span class="font-semibold text-sm">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Toggle debug console
+        function toggleDebugConsole() {
+            const debugConsole = document.getElementById('debug-console');
+            const showBtn = document.getElementById('show-debug-btn');
+            
+            debugConsole.classList.toggle('hidden');
+            showBtn.classList.toggle('hidden');
+        }
+
+        // Enter key on login
+        document.getElementById('admin-key-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -20,7 +20,7 @@ const PORT = 8080;
 const API_KEYS_FILE = path.join(__dirname, 'api_keys.json');
 const STATS_FILE = path.join(__dirname, 'api_stats.json');
 const ADMIN_KEY = 'MutanoX3397';
-const DASHBOARD_PATH = path.join(__dirname, 'dashboards', 'dashboard_enterprise.html');
+const DASHBOARD_PATH = path.join(__dirname, 'dashboards', 'dashboard_production.html');
 
 // Telemetria e Logs REAIS
 let liveLogs = [];
