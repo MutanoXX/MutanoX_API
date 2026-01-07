@@ -1,15 +1,25 @@
+/**
+ * API Única - @MutanoX (ULTRA DARK INTEGRATED VERSION)
+ * Consolidated endpoint for all queries and content generation
+ * 
+ * Port: 8080
+ * Author: @MutanoX
+ */
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { URL, URLSearchParams } = require('url');
 
 // ==========================================
-// CONFIGURATIONS & AUTH SYSTEM
+// CONFIGURATIONS & AUTH SYSTEM (NEW)
 // ==========================================
 
 const PORT = 8080;
 const API_KEYS_FILE = path.join(__dirname, 'api_keys.json');
 const ADMIN_KEY = 'MutanoX3397';
+const DASHBOARD_PATH = path.join(__dirname, 'dashboards', 'dashboard_apikeys.html');
 
 // Telemetria e Logs REAIS
 let liveLogs = [];
@@ -47,10 +57,7 @@ function generateUid(length = 16) { return crypto.randomBytes(Math.ceil(length /
 
 function loadApiKeys() {
     if (!fs.existsSync(API_KEYS_FILE)) {
-        const initial = {
-            [ADMIN_KEY]: { owner: "Admin", role: "admin", active: true, usageCount: 0, lastUsed: null, createdAt: new Date().toISOString() },
-            'test-key': { owner: "Teste", role: "user", active: true, usageCount: 0, lastUsed: null, createdAt: new Date().toISOString() }
-        };
+        const initial = { [ADMIN_KEY]: { owner: "Admin", role: "admin", active: true, usageCount: 0, lastUsed: null, createdAt: new Date().toISOString() } };
         fs.writeFileSync(API_KEYS_FILE, JSON.stringify(initial, null, 2));
         return initial;
     }
@@ -73,7 +80,26 @@ function validateAndTrackKey(key) {
 }
 
 // ==========================================
-// UTILITY FUNCTIONS
+// ORIGINAL CONFIGURATIONS (PRESERVED)
+// ==========================================
+
+const DEFAULT_VIDEO_API_KEY = 'MutanoXX';
+const DEFAULT_IMAGE_API_KEY = 'freeApikey';
+const DEFAULT_BYPASSCF_API_KEY = 'MutanoXX';
+const DEFAULT_API_KEY = 'MutanoXX';
+
+const BYPASS_TYPES = [
+  'turnstile-min',
+  'turnstile-max',
+  'source',
+  'waf-session',
+  'hcaptcha-invisible',
+  'recaptcha-v3',
+  'recaptcha-v3-enterprise'
+];
+
+// ==========================================
+// ORIGINAL UTILITY FUNCTIONS (PRESERVED)
 // ==========================================
 
 function isValidString(str) {
@@ -105,7 +131,7 @@ function createApiUrl(baseUrl, params) {
 }
 
 // ==========================================
-// PARSER FUNCTIONS
+// ORIGINAL PARSER FUNCTIONS (PRESERVED)
 // ==========================================
 
 function parseCPFData(text) {
@@ -266,7 +292,7 @@ function parseTelefoneData(text) {
 }
 
 // ==========================================
-// API HANDLERS
+// ORIGINAL API HANDLERS (PRESERVED)
 // ==========================================
 
 async function consultarCPF(cpf) {
@@ -280,7 +306,7 @@ async function consultarCPF(cpf) {
 
     console.log('[consultarCPF] Consultando CPF:', cpf);
     const response = await fetch(apiUrl);
-
+    
     if (!response.ok) throw new Error(`API retornou status ${response.status}`);
 
     const data = await response.json();
@@ -307,7 +333,7 @@ async function consultarNome(nome) {
 
     console.log('[consultarNome] Consultando nome:', nome);
     const response = await fetch(apiUrl);
-
+    
     if (!response.ok) throw new Error(`API retornou status ${response.status}`);
 
     const data = await response.json();
@@ -334,7 +360,7 @@ async function consultarNumero(numero) {
 
     console.log('[consultarNumero] Consultando número:', numero);
     const response = await fetch(apiUrl);
-
+    
     if (!response.ok) throw new Error(`API retornou status ${response.status}`);
 
     const data = await response.json();
@@ -350,8 +376,366 @@ async function consultarNumero(numero) {
   }
 }
 
+async function bypassCloudflare(url, siteKey, type, proxy, apikey) {
+  if (!isValidString(url) || !isValidUrl(url)) {
+    return { sucesso: false, erro: 'URL inválida ou vazia', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_BYPASSCF_API_KEY;
+  if (!isValidString(siteKey)) siteKey = '0x4AAAAAAAdJZmNxW54o-Gvd';
+  if (!isValidString(type)) type = 'turnstile-min';
+
+  try {
+    console.log('[bypassCloudflare] Iniciando bypass:', url);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/tools/bypasscf', { url, siteKey, type, proxy, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: data.success, data: data.data || data, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[bypassCloudflare] Erro:', error.message);
+    let msg = 'Erro ao realizar bypass';
+    if (error.name === 'AbortError') msg = 'Tempo limite excedido (2 minutos)';
+    return { sucesso: false, erro: msg, criador: '@MutanoX' };
+  }
+}
+
+async function textToVideo(prompt, quality, ratio, apikey) {
+  if (!isValidString(prompt)) {
+    return { sucesso: false, erro: 'Prompt inválido ou vazio', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_VIDEO_API_KEY;
+  if (!isValidString(quality)) quality = '1080p';
+  if (!isValidString(ratio)) ratio = '9:16';
+
+  try {
+    console.log('[textToVideo] Gerando vídeo:', prompt);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 300000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/ai/text2video', { prompt, quality, ratio, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { success: data.success, video_url: data.data?.result || null, prompt, quality, ratio, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[textToVideo] Erro:', error.message);
+    let msg = 'Erro ao gerar vídeo';
+    if (error.name === 'AbortError') msg = 'Tempo limite excedido (5 minutos)';
+    return { success: false, erro: msg, criador: '@MutanoX' };
+  }
+}
+
+async function nsfwImageGen(prompt, negative, apikey) {
+  if (!isValidString(prompt)) {
+    return { sucesso: false, erro: 'Prompt inválido ou vazio', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_IMAGE_API_KEY;
+  if (!isValidString(negative)) negative = 'blurry,low quality';
+
+  try {
+    console.log('[nsfwImageGen] Gerando imagem NSFW:', prompt);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 180000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/ai/dalle3', { prompt, negative, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { success: data.success, image_url: data.data?.result || null, prompt, negative, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[nsfwImageGen] Erro:', error.message);
+    let msg = 'Erro ao gerar imagem NSFW';
+    if (error.name === 'AbortError') msg = 'Tempo limite excedido (3 minutos)';
+    return { success: false, erro: msg, criador: '@MutanoX' };
+  }
+}
+
+async function consultarInfoFF(id) {
+  if (!isValidString(id)) {
+    return { sucesso: false, erro: 'ID inválido ou vazio', criador: '@MutanoX' };
+  }
+
+  try {
+    console.log('[consultarInfoFF] Consultando ID:', id);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+    const apiUrl = createApiUrl('https://world-ecletix.onrender.com/api/infoff', { id });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: true, id, dados: data, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[consultarInfoFF] Erro:', error.message);
+    let msg = 'Erro ao consultar informações da conta Free Fire';
+    if (error.name === 'AbortError') msg = 'Tempo limite excedido (1 minuto)';
+    return { sucesso: false, erro: msg, criador: '@MutanoX' };
+  }
+}
+
+async function allInOneDownloader(urlParam, apikey) {
+  if (!isValidString(urlParam) || !isValidUrl(urlParam)) {
+    return { sucesso: false, erro: 'URL inválida ou vazia', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_API_KEY;
+
+  try {
+    console.log('[allInOneDownloader] Iniciando download:', urlParam);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/download/aio', { url: urlParam, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: data.success !== undefined ? data.success : true, dados: data, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[allInOneDownloader] Erro:', error.message);
+    return { sucesso: false, erro: error.message, criador: '@MutanoX' };
+  }
+}
+
+async function githubSearch(username, apikey) {
+  if (!isValidString(username)) {
+    return { sucesso: false, erro: 'Username inválido ou vazio', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_API_KEY;
+
+  try {
+    console.log('[githubSearch] Buscando usuário:', username);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/search/githubSearch', { username, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: data.success !== undefined ? data.success : true, dados: data, username, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[githubSearch] Erro:', error.message);
+    return { sucesso: false, erro: error.message, criador: '@MutanoX' };
+  }
+}
+
+async function googleImage(query, apikey) {
+  if (!isValidString(query)) {
+    return { sucesso: false, erro: 'Query inválida ou vazia', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_API_KEY;
+
+  try {
+    console.log('[googleImage] Buscando imagens:', query);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/search/gimage', { query, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: data.success !== undefined ? data.success : true, dados: data, query, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[googleImage] Erro:', error.message);
+    return { sucesso: false, erro: error.message, criador: '@MutanoX' };
+  }
+}
+
+async function pinterest(query, apikey) {
+  if (!isValidString(query)) {
+    return { sucesso: false, erro: 'Query inválida ou vazia', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_API_KEY;
+
+  try {
+    console.log('[pinterest] Buscando imagens:', query);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/search/pinterest', { query, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: data.success !== undefined ? data.success : true, dados: data, query, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[pinterest] Erro:', error.message);
+    return { sucesso: false, erro: error.message, criador: '@MutanoX' };
+  }
+}
+
+async function robloxStalk(username, apikey) {
+  if (!isValidString(username)) {
+    return { sucesso: false, erro: 'Username inválido ou vazio', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_API_KEY;
+
+  try {
+    console.log('[robloxStalk] Buscando usuário:', username);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/search/robloxStalk', { username, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: data.success !== undefined ? data.success : true, dados: data, username, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[robloxStalk] Erro:', error.message);
+    return { sucesso: false, erro: error.message, criador: '@MutanoX' };
+  }
+}
+
+async function tiktokSearch(username, apikey) {
+  if (!isValidString(username)) {
+    return { sucesso: false, erro: 'Username inválido ou vazio', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_API_KEY;
+
+  try {
+    console.log('[tiktokSearch] Buscando usuário:', username);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/search/tiktokSearch', { username, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: data.success !== undefined ? data.success : true, dados: data, username, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[tiktokSearch] Erro:', error.message);
+    return { sucesso: false, erro: error.message, criador: '@MutanoX' };
+  }
+}
+
+async function youtubeSearch(query, apikey) {
+  if (!isValidString(query)) {
+    return { sucesso: false, erro: 'Query inválida ou vazia', criador: '@MutanoX' };
+  }
+
+  if (!isValidString(apikey)) apikey = DEFAULT_API_KEY;
+
+  try {
+    console.log('[youtubeSearch] Buscando vídeos:', query);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+    const apiUrl = createApiUrl('https://anabot.my.id/api/search/ytSearch', { query, apikey });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, { method: 'GET', signal: controller.signal });
+
+    clearTimeout(timeoutId);
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: data.success !== undefined ? data.success : true, dados: data, query, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[youtubeSearch] Erro:', error.message);
+    return { sucesso: false, erro: error.message, criador: '@MutanoX' };
+  }
+}
+
+async function bypassCity(urlParam) {
+  if (!isValidString(urlParam) || !isValidUrl(urlParam)) {
+    return { sucesso: false, erro: 'URL inválida ou vazia', criador: '@MutanoX' };
+  }
+
+  try {
+    console.log('[bypassCity] Iniciando bypass:', urlParam);
+
+    const apiUrl = createApiUrl('https://api.paxsenix.org/tools/bypass-city', { url: urlParam });
+    if (!apiUrl) throw new Error('URL inválida');
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer sk-paxsenix-JunMXU0cPmFt8HiC0F5zW1N0ow1lI509oyE3YuQycWfFjm2f'
+      }
+    });
+
+    if (!response.ok) throw new Error(`API retornou status ${response.status}`);
+
+    const data = await response.json();
+    return { sucesso: data.ok !== undefined ? data.ok : true, data: data.data || null, isPaste: data.isPaste, name: data.name, paste: data.paste, supportedLinks: data.supportedLinks, embedData: data.embedData, criador: '@MutanoX' };
+  } catch (error) {
+    console.error('[bypassCity] Erro:', error.message);
+    return { sucesso: false, erro: error.message, criador: '@MutanoX' };
+  }
+}
+
 // ==========================================
-// HTTP SERVER
+// HTTP SERVER (INTEGRATED)
 // ==========================================
 
 const server = http.createServer(async (req, res) => {
@@ -381,12 +765,24 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // AUTHENTICATION
+  // SERVIR DASHBOARD (NEW)
+  if (path === '/admin' || path === '/dashboard') {
+      if (fs.existsSync(DASHBOARD_PATH)) {
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(fs.readFileSync(DASHBOARD_PATH));
+          return;
+      } else {
+          res.writeHead(404); res.end('Dashboard file not found');
+          return;
+      }
+  }
+
+  // AUTHENTICATION (NEW)
   const auth = validateAndTrackKey(apiKey);
   const logMsg = `Usuário: ${auth.valid ? auth.owner : 'DESCONHECIDO'} | Rota: ${path}`;
   const logDetails = `Key: ${apiKey || 'Nenhuma'} | UA: ${userAgent}`;
 
-  // ADMIN ENDPOINTS
+  // ADMIN ENDPOINTS (NEW)
   if (path.startsWith('/api/admin/')) {
       if (path === '/api/admin/validate') {
           if (apiKey === ADMIN_KEY) {
@@ -456,7 +852,7 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({
           sucesso: false,
           erro: 'Tipo de consulta não especificado',
-          tiposDisponiveis: ['cpf', 'nome', 'numero'],
+          tiposDisponiveis: ['cpf', 'nome', 'numero', 'bypass', 'bypasscf', 'infoff', 'downloader', 'github', 'gimage', 'pinterest', 'roblox', 'tiktok', 'yt', 'video', 'nsfw'],
           criador: '@MutanoX'
         }, null, 2));
         return;
@@ -475,6 +871,42 @@ const server = http.createServer(async (req, res) => {
         case 'numero':
           result = await consultarNumero(query.q);
           break;
+        case 'bypass':
+          result = await bypassCity(query.url);
+          break;
+        case 'bypasscf':
+          result = await bypassCloudflare(query.url, query.siteKey || '0x4AAAAAAAdJZmNxW54o-Gvd', query.type || 'turnstile-min', query.proxy || '', query.apikey || DEFAULT_BYPASSCF_API_KEY);
+          break;
+        case 'infoff':
+          result = await consultarInfoFF(query.id);
+          break;
+        case 'downloader':
+          result = await allInOneDownloader(query.url, query.apikey || DEFAULT_API_KEY);
+          break;
+        case 'github':
+          result = await githubSearch(query.username, query.apikey || DEFAULT_API_KEY);
+          break;
+        case 'gimage':
+          result = await googleImage(query.q || query.query, query.apikey || DEFAULT_API_KEY);
+          break;
+        case 'pinterest':
+          result = await pinterest(query.q || query.query, query.apikey || DEFAULT_API_KEY);
+          break;
+        case 'roblox':
+          result = await robloxStalk(query.username, query.apikey || DEFAULT_API_KEY);
+          break;
+        case 'tiktok':
+          result = await tiktokSearch(query.username, query.apikey || DEFAULT_API_KEY);
+          break;
+        case 'yt':
+          result = await youtubeSearch(query.q || query.query, query.apikey || DEFAULT_API_KEY);
+          break;
+        case 'video':
+          result = await textToVideo(query.prompt, query.quality || '1080p', query.ratio || '9:16', query.apikey || DEFAULT_VIDEO_API_KEY);
+          break;
+        case 'nsfw':
+          result = await nsfwImageGen(query.prompt, query.negative || 'blurry,low quality', query.apikey || DEFAULT_IMAGE_API_KEY);
+          break;
         default:
           res.writeHead(400);
           result = { sucesso: false, erro: `Tipo desconhecido: ${tipo}`, criador: '@MutanoX' };
@@ -482,25 +914,6 @@ const server = http.createServer(async (req, res) => {
 
       res.writeHead(200);
       res.end(JSON.stringify(result, null, 2));
-    } else if (path === '/api/dashboard/metricas') {
-        res.writeHead(200);
-        res.end(JSON.stringify({
-            success: true,
-            dados: {
-                ...systemStats,
-                endpointHits: systemStats.endpointHits,
-                totalRequests: systemStats.totalRequests,
-                uptime: Date.now() - systemStats.startTime
-            }
-        }));
-    } else if (path === '/api/dashboard/logs') {
-        res.writeHead(200);
-        res.end(JSON.stringify({
-            success: true,
-            dados: {
-                logs: liveLogs
-            }
-        }));
     } else {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(htmlInfo);
@@ -535,8 +948,17 @@ const htmlInfo = `<!DOCTYPE html>
         <div class="endpoint"><strong>CPF:</strong><br><code>/api/consultas?tipo=cpf&cpf=XXXXX</code></div>
         <div class="endpoint"><strong>Nome:</strong><br><code>/api/consultas?tipo=nome&q=NOME</code></div>
         <div class="endpoint"><strong>Número:</strong><br><code>/api/consultas?tipo=numero&q=NUMERO</code></div>
-        <div class="endpoint"><strong>Dashboard Métricas:</strong><br><code>/api/dashboard/metricas</code></div>
-        <div class="endpoint"><strong>Dashboard Logs:</strong><br><code>/api/dashboard/logs</code></div>
+        <div class="endpoint"><strong>Bypass Cloudflare:</strong><br><code>/api/consultas?tipo=bypasscf&url=URL&type=turnstile-min</code></div>
+        <div class="endpoint"><strong>Info Free Fire:</strong><br><code>/api/consultas?tipo=infoff&id=ID_CONTA</code></div>
+        <div class="endpoint"><strong>Download:</strong><br><code>/api/consultas?tipo=downloader&url=URL</code></div>
+        <div class="endpoint"><strong>GitHub:</strong><br><code>/api/consultas?tipo=github&username=USERNAME</code></div>
+        <div class="endpoint"><strong>Google Imagens:</strong><br><code>/api/consultas?tipo=gimage&q=QUERY</code></div>
+        <div class="endpoint"><strong>Pinterest:</strong><br><code>/api/consultas?tipo=pinterest&q=QUERY</code></div>
+        <div class="endpoint"><strong>Roblox:</strong><br><code>/api/consultas?tipo=roblox&username=USERNAME</code></div>
+        <div class="endpoint"><strong>TikTok:</strong><br><code>/api/consultas?tipo=tiktok&username=USERNAME</code></div>
+        <div class="endpoint"><strong>YouTube:</strong><br><code>/api/consultas?tipo=yt&q=QUERY</code></div>
+        <div class="endpoint"><strong>Vídeo:</strong><br><code>/api/consultas?tipo=video&prompt=PROMPT&quality=1080p&ratio=9:16</code></div>
+        <div class="endpoint"><strong>Imagem NSFW:</strong><br><code>/api/consultas?tipo=nsfw&prompt=PROMPT</code></div>
     </div>
 </body>
 </html>`;
@@ -545,7 +967,6 @@ server.listen(PORT, () => {
     console.clear();
     console.log(`${colors.fg.green}${colors.bright}  MUTANOX ULTRA DARK COMMAND - V3.5  ${colors.reset}\n`);
     log('SUCCESS', `Servidor rodando na porta ${PORT}`);
-    log('INFO', `Dashboard disponível em: http://localhost:${PORT}/`);
+    log('INFO', `Dashboard: http://localhost:${PORT}/admin`);
     log('ADMIN', `Admin Key: ${ADMIN_KEY}`);
-    log('INFO', `Test Key: test-key`);
 });

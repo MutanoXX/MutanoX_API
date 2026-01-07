@@ -24,3 +24,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Temporary files
+*.zip
+*.tmp
+*.temp
+
+# Test output
+coverage/

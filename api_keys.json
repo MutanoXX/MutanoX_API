@@ -3,16 +3,38 @@
     "owner": "Admin",
     "role": "admin",
     "active": true,
-    "usageCount": 0,
-    "lastUsed": null,
-    "createdAt": "2026-01-07T18:21:17.552Z"
+    "createdAt": "2026-01-07T00:00:00.000Z",
+    "usageCount": 12,
+    "lastUsed": "2026-01-07T18:31:31.071Z"
   },
   "test-key": {
     "owner": "Teste",
     "role": "user",
     "active": true,
-    "usageCount": 9,
-    "lastUsed": "2026-01-07T18:26:05.877Z",
-    "createdAt": "2026-01-07T18:21:17.552Z"
+    "usageCount": 3,
+    "lastUsed": "2026-01-07T18:31:33.919Z",
+    "createdAt": "2026-01-07T18:30:00.000Z"
+  },
+  "UserKey123": {
+    "owner": "Joao",
+    "role": "user",
+    "active": true,
+    "createdAt": "2026-01-07T13:01:38.028Z"
+  },
+  "MutanoX-af1b54984b1fafed": {
+    "owner": "Carlos",
+    "role": "user",
+    "active": true,
+    "usageCount": 1,
+    "lastUsed": "2026-01-07T13:09:10.436Z",
+    "createdAt": "2026-01-07T13:09:10.418Z"
+  },
+  "MutanoX-bf4c326050e5a68b": {
+    "owner": "MutanoUser",
+    "role": "user",
+    "active": true,
+    "usageCount": 0,
+    "lastUsed": null,
+    "createdAt": "2026-01-07T13:15:24.786Z"
   }
 }

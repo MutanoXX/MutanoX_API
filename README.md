@@ -1,16 +1,22 @@
-# MutanoX API - Dashboard
+# MutanoX API - Dashboard Completo
 
-API robusta para consulta de informações de telefone, CPF e nome, com dashboard de métricas em tempo real e dados **100% REAIS**.
+API robusta para consulta de informações de telefone, CPF e nome, com dashboard administrativo completo em tempo real e dados **100% REAIS**.
 
 ## 🚀 Funcionalidades
 
+### API de Consultas (Dados Reais)
 - **Consulta de Telefone**: Obtém informações reais de números de telefone brasileiros
 - **Consulta de CPF**: Valida e retorna informações completas de CPF (dados reais)
 - **Consulta por Nome**: Busca pessoas por nome completo (dados reais)
+- **Múltiplos outros endpoints**: Bypass Cloudflare, Gerador de Vídeo, Imagens NSFW, FreeFire, Downloader, etc.
+
+### Dashboard Administrativo
 - **Dashboard em Tempo Real**: Métricas de uso da API
 - **Logs em Tempo Real**: Visualização de todas as requisições
 - **Sistema de API Keys**: Autenticação e controle de acesso
-- **Admin Dashboard**: Painel administrativo completo
+- **Gestão de Chaves**: Criar, ativar/desativar, deletar API keys
+- **Gráficos de Uso**: Distribuição de requisições por endpoint
+- **Monitoramento de Uptime**: Tempo de atividade do sistema
 
 ## 📋 Pré-requisitos
 
@@ -49,13 +55,14 @@ bun run start
 ```
 
 A API estará disponível em `http://localhost:8080`
+O Dashboard estará disponível em `http://localhost:8080/admin`
 
 ## 🔑 Autenticação
 
 A API requer uma API key válida para acessar os endpoints. Keys disponíveis:
 
-- **Admin Key**: `MutanoX3397` (acesso completo)
-- **Test Key**: `test-key` (para testes)
+- **Admin Key**: `MutanoX3397` (acesso completo ao dashboard e API)
+- **Test Key**: `test-key` (para testes e uso geral da API)
 
 ### Criar Nova API Key (Admin Only)
 ```http
@@ -65,11 +72,17 @@ apikey: MutanoX3397
 
 ## 📡 Rotas da API
 
+### Dashboard HTML
+```http
+GET /admin?apikey=MutanoX3397
+```
+Acessa o dashboard administrativo completo.
+
 ### Consultas (Requer API Key)
 
 #### Consultar Telefone
 ```http
-GET /api/consultas?tipo=numero&q=65999701064&apikey=SUA_KEY
+GET /api/consultas?tipo=numero&q=65999701064&apikey=test-key
 ```
 
 **Exemplo de Resposta:**
@@ -93,7 +106,7 @@ GET /api/consultas?tipo=numero&q=65999701064&apikey=SUA_KEY
 
 #### Consultar CPF
 ```http
-GET /api/consultas?tipo=cpf&cpf=04815502161&apikey=SUA_KEY
+GET /api/consultas?tipo=cpf&cpf=04815502161&apikey=test-key
 ```
 
 **Exemplo de Resposta:**
@@ -137,39 +150,10 @@ GET /api/consultas?tipo=cpf&cpf=04815502161&apikey=SUA_KEY
 
 #### Consultar por Nome
 ```http
-GET /api/consultas?tipo=nome&q=Silva&apikey=SUA_KEY
+GET /api/consultas?tipo=nome&q=Silva&apikey=test-key
 ```
 
-### Dashboard (Requer API Key)
-
-#### Métricas
-```http
-GET /api/dashboard/metricas?apikey=SUA_KEY
-```
-
-**Resposta:**
-```json
-{
-  "success": true,
-  "dados": {
-    "startTime": 1704617471000,
-    "totalRequests": 15,
-    "endpointHits": {
-      "numero": 5,
-      "cpf": 3,
-      "nome": 7
-    },
-    "uptime": 123456
-  }
-}
-```
-
-#### Logs
-```http
-GET /api/dashboard/logs?apikey=SUA_KEY
-```
-
-### Admin API (Admin Key Requerida)
+### Admin API (Requer Admin Key: MutanoX3397)
 
 #### Validar Admin
 ```http
@@ -201,6 +185,11 @@ DELETE /api/admin/keys?target=CHAVE&apikey=MutanoX3397
 GET /api/admin/stats?apikey=MutanoX3397
 ```
 
+#### Logs
+```http
+GET /api/admin/logs?apikey=MutanoX3397
+```
+
 ## 🧪 Testes
 
 Execute os testes para verificar se a API está funcionando corretamente:
@@ -212,35 +201,56 @@ bun test
 ```
 
 O teste irá:
-1. Verificar o status da API
-2. Consultar o telefone 65999701064 (API REAL)
-3. Consultar o CPF retornado (API REAL)
-4. Obter métricas do dashboard
-5. Obter logs do dashboard
+1. Verificar o acesso ao dashboard HTML
+2. Validar a Admin Key
+3. Obter stats do admin
+4. Consultar o telefone 65999701064 (API REAL)
+5. Consultar o CPF retornado (API REAL)
 6. Consultar por nome "Silva" (API REAL)
+7. Obter logs do admin
 
-## 📊 Dashboard Frontend
+## 📊 Dashboard Features
 
-O dashboard frontend está disponível no projeto Next.js em `/` e consome a API em tempo real.
+O dashboard administrativo em tempo real inclui:
 
-### Funcionalidades do Dashboard
-- **Métricas em tempo real**: Total de requisições, hits por endpoint
-- **Interface de consulta**: Formulários para telefone, CPF e nome
-- **Visualização de resultados**: Dados completos e formatados
-- **Auto-refresh**: Atualização automática a cada 5 segundos
-- **Design responsivo**: Funciona em desktop e mobile
+### Métricas em Tempo Real
+- **Total Requests**: Número total de requisições
+- **Active Keys**: Quantidade de chaves ativas
+- **Real-Time Load**: Requisições por segundo
+- **System Status**: Status do sistema (ONLINE)
+- **Uptime**: Tempo de atividade do sistema
+
+### Gestão de API Keys
+- **Tabela de Chaves**: Visualização de todas as chaves
+- **Criar Chaves**: Gerar novas chaves de acesso
+- **Ativar/Desativar**: Toggle de status de chaves
+- **Deletar**: Remover chaves não utilizadas
+- **Visualização**: Nome, identificador, uso e status
+
+### Gráficos e Estatísticas
+- **Gráfico de Pizza**: Distribuição de requisições por endpoint
+- **Lista de Endpoints**: Visualização detalhada por tipo de consulta
+- **Atualização em Tempo Real**: Dados atualizados a cada 2 segundos
+
+### Logs em Tempo Real
+- **Terminal Virtual**: Visualização estilo terminal de todos os logs
+- **Coloração**: Logs coloridos por tipo (SUCCESS, ERROR, INFO, AUTH)
+- **Auto-Scroll**: Rolamento automático para novos logs
+- **Limpeza**: Botão para limpar o terminal
 
 ## 🏗️ Estrutura do Projeto
 
 ```
 MutanoX_API/
-├── api.js                  # Servidor principal da API (versão REAL)
-├── test-api.js             # Script de testes da API real
-├── package.json            # Dependências e scripts
-├── .gitignore              # Arquivos ignorados pelo git
-├── README.md               # Documentação
-├── api_keys.json           # Chaves de API (gerado automaticamente)
-└── RESUMO.md              # Resumo do projeto
+├── api.js                        # Servidor principal da API (versão original)
+├── testar-tudo.js                # Script de testes completo
+├── package.json                  # Dependências e scripts
+├── api_keys.json                 # Chaves de API
+├── .gitignore                    # Arquivos ignorados pelo git
+├── README.md                     # Documentação
+├── dashboards/                   # Pasta de dashboards
+│   └── dashboard_apikeys.html     # Dashboard administrativo HTML
+└── .git/                        # Controle de versão
 ```
 
 ## 🌐 Integração com Frontend
@@ -249,15 +259,15 @@ MutanoX_API/
 
 ```typescript
 // Consultar telefone
-const response = await fetch('/api?XTransformPort=8080/api/consultas?tipo=numero&q=65999701064&apikey=test-key');
+const response = await fetch('http://localhost:8080/api/consultas?tipo=numero&q=65999701064&apikey=test-key');
 const data = await response.json();
 
 // Consultar CPF
-const response = await fetch('/api?XTransformPort=8080/api/consultas?tipo=cpf&cpf=04815502161&apikey=test-key');
+const response = await fetch('http://localhost:8080/api/consultas?tipo=cpf&cpf=04815502161&apikey=test-key');
 const data = await response.json();
 
 // Consultar por nome
-const response = await fetch('/api?XTransformPort=8080/api/consultas?tipo=nome&q=Silva&apikey=test-key');
+const response = await fetch('http://localhost:8080/api/consultas?tipo=nome&q=Silva&apikey=test-key');
 const data = await response.json();
 ```
 
@@ -274,14 +284,22 @@ curl "http://localhost:8080/api/consultas?tipo=cpf&cpf=04815502161&apikey=test-k
 curl "http://localhost:8080/api/consultas?tipo=nome&q=Silva&apikey=test-key"
 ```
 
+### Acessar Dashboard
+
+Abra o navegador e acesse:
+```
+http://localhost:8080/admin?apikey=MutanoX3397
+```
+
 ## ⚠️ Notas Importantes
 
 1. **Dados Reais**: Esta API consome dados de APIs externas e retorna informações reais.
-2. **API Keys**: Todas as requisições requerem uma API key válida.
-3. **Rate Limiting**: Considere implementar rate limiting em produção.
-4. **Admin Key**: A admin key (`MutanoX3397`) tem acesso completo a todos os endpoints administrativos.
+2. **API Keys**: Todas as requisições requerem uma API key válida (apikey query parameter ou x-api-key header).
+3. **Admin Dashboard**: Requer a Admin Key (`MutanoX3397`) para acessar.
+4. **API Externa**: A API depende de serviços externos (world-ecletix.onrender.com) que podem ter limitações.
 5. **Logs**: Os logs são armazenados em memória e mantêm as últimas 50 entradas.
-6. **API Externa**: A API depende de serviços externos que podem ter limitações.
+6. **CORS**: Habilitado para todas as origens (configure para produção).
+7. **Persistência**: As API keys são armazenadas em `api_keys.json`.
 
 ## 🔐 Segurança
 
@@ -291,11 +309,16 @@ curl "http://localhost:8080/api/consultas?tipo=nome&q=Silva&apikey=test-key"
 - Tratamento de erros adequado
 - Logs de requisições com timestamps
 - Controle de acesso por role (admin/user)
+- Dashboard protegido por admin key
 
 ## 📝 API Externa
 
 Esta API consome dados de APIs externas:
-- Base de dados de CPF/Telefone (world-ecletix.onrender.com)
+- Base de dados de CPF/Telefone/Nome (world-ecletix.onrender.com)
+- Bypass Cloudflare (anabot.my.id)
+- Gerador de Vídeo (anabot.my.id)
+- Downloader (anabot.my.id)
+- E outros...
 
 ## 🤝 Contribuindo
 
@@ -325,7 +348,7 @@ Para suporte, abra uma issue no repositório ou entre em contato com o autor.
    Total de resultados: 4
    Primeiro resultado:
    Nome: LUCIENE APARECIDA BALBINO FIDELIS
-   CPF/CNPJ: 04815502161
+   CPF/CNPJ: 00004815502161
    Cidade/UF: CACERES/MT
    Bairro: JUNCO
    CEP: 07820000
@@ -343,4 +366,22 @@ Para suporte, abra uma issue no repositório ou entre em contato com o autor.
    Endereços: 4 endereços completos
 ```
 
-🚀 **API 100% FUNCIONAL COM DADOS REAIS!**
+### Teste com Nome "Silva"
+```
+✅ Consulta por nome realizada com sucesso!
+   Total de resultados: 500
+```
+
+## 🎨 Dashboard
+
+O dashboard administrativo oferece uma interface completa e moderna para:
+
+- Monitorar o uso da API em tempo real
+- Gerenciar chaves de acesso
+- Visualizar logs do sistema
+- Analisar distribuição de requisições
+- Criar e remover usuários
+
+Acesse: `http://localhost:8080/admin` (com Admin Key)
+
+🚀 **API 100% FUNCIONAL COM DADOS REAIS E DASHBOARD COMPLETO!**
