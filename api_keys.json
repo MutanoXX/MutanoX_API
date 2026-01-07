@@ -1,0 +1,18 @@
+{
+  "MutanoX3397": {
+    "owner": "Admin",
+    "role": "admin",
+    "active": true,
+    "usageCount": 0,
+    "lastUsed": null,
+    "createdAt": "2026-01-07T18:21:17.552Z"
+  },
+  "test-key": {
+    "owner": "Teste",
+    "role": "user",
+    "active": true,
+    "usageCount": 9,
+    "lastUsed": "2026-01-07T18:26:05.877Z",
+    "createdAt": "2026-01-07T18:21:17.552Z"
+  }
+}
