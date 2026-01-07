@@ -19,7 +19,7 @@ const { URL, URLSearchParams } = require('url');
 const PORT = 8080;
 const API_KEYS_FILE = path.join(__dirname, 'api_keys.json');
 const ADMIN_KEY = 'MutanoX3397';
-const DASHBOARD_PATH = path.join(__dirname, 'dashboards', 'dashboard_apikeys.html');
+const DASHBOARD_PATH = path.join(__dirname, 'dashboards', 'dashboard_profissional.html');
 
 // Telemetria e Logs REAIS
 let liveLogs = [];
@@ -28,6 +28,18 @@ let systemStats = {
     totalRequests: 0,
     endpointHits: {}
 };
+
+// Função para ler estatísticas sem incrementar
+function getStatsOnly() {
+    const keys = loadApiKeys();
+    return {
+        success: true,
+        keys: keys,
+        endpointHits: systemStats.endpointHits,
+        totalRequests: systemStats.totalRequests,
+        uptime: Date.now() - systemStats.startTime
+    };
+}
 
 const colors = {
     reset: "\x1b[0m", bright: "\x1b[1m", dim: "\x1b[2m",
@@ -803,6 +815,9 @@ const server = http.createServer(async (req, res) => {
 
       if (path === '/api/admin/stats' && req.method === 'GET') {
           res.writeHead(200); res.end(JSON.stringify({ success: true, keys, endpointHits: systemStats.endpointHits, totalRequests: systemStats.totalRequests, uptime: Date.now() - systemStats.startTime }));
+      } else if (path === '/api/admin/stats-readonly' && req.method === 'GET') {
+          // Endpoint readonly para dashboard (NÃO incrementa contadores)
+          res.writeHead(200); res.end(JSON.stringify(getStatsOnly()));
       } else if (path === '/api/admin/keys' && req.method === 'GET') {
           res.writeHead(200); res.end(JSON.stringify({ success: true, keys }));
       } else if (path === '/api/admin/logs' && req.method === 'GET') {
