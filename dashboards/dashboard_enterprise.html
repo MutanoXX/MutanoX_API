@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MutanoX API - Enterprise Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10b981',
+                        primaryDark: '#059669',
+                        primaryLight: '#6ee7b7',
+                        secondary: '#6366f1',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        success: '#22c55e',
+                        background: '#0f172a',
+                        surface: '#1e293b',
+                        surfaceLight: '#334155',
+                        surfaceLighter: '#475569',
+                        textPrimary: '#f8fafc',
+                        textSecondary: '#94a3b8',
+                        textMuted: '#64748b',
+                        border: '#334155'
+                    },
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .cyber-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cyber-card:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .neon-text {
+            text-shadow: 0 0 30px rgba(16, 185, 129, 0.6);
+        }
+
+        .neon-glow {
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.3);
+        }
+
+        .status-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .terminal {
+            background: #0a0a0a;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .terminal::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .terminal::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        .terminal::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        .terminal::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .log-entry {
+            padding: 6px 12px;
+            border-left: 2px solid transparent;
+            margin: 2px 0;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.2s;
+        }
+
+        .log-entry:hover {
+            background: rgba(51, 65, 85, 0.3);
+            border-left-color: #10b981;
+        }
+
+        .log-success { color: #10b981; }
+        .log-error { color: #ef4444; }
+        .log-warning { color: #f59e0b; }
+        .log-info { color: #3b82f6; }
+        .log-auth { color: #a855f7; }
+        .log-admin { color: #fbbf24; }
+
+        .metric-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #10b981, #6366f1);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .key-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .key-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #10b981, #6366f1);
+        }
+
+        .endpoint-item {
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .endpoint-item:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            transform: translateX(4px);
+        }
+
+        .endpoint-item.disabled {
+            opacity: 0.5;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 280px;
+        }
+
+        .btn-cyber {
+            background: linear-gradient(135deg, #10b981, #059669);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-cyber::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-cyber:hover::before {
+            left: 100%;
+        }
+
+        .btn-cyber:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-cyber:active {
+            transform: translateY(0);
+        }
+
+        .btn-cyber-sm {
+            background: linear-gradient(135deg, #10b981, #059669);
+            transition: all 0.3s;
+        }
+
+        .btn-cyber-sm:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .input-cyber {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #334155;
+            transition: all 0.3s;
+        }
+
+        .input-cyber:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+            outline: none;
+        }
+
+        .modal-overlay {
+            backdrop-filter: blur(8px);
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .copy-btn {
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .tab-btn {
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .progress-bar {
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="text-textPrimary">
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 modal-overlay">
+        <div class="cyber-card p-10 w-full max-w-md border-2 border-primary/30 neon-glow">
+            <div class="text-center mb-8">
+                <div class="w-24 h-24 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-primary/20 mx-auto">
+                    <i class="fas fa-shield-halved text-5xl text-primary neon-text"></i>
+                </div>
+                <h1 class="text-5xl font-black tracking-tight neon-text text-primary mb-2">MUTANOX</h1>
+                <p class="text-textSecondary text-sm tracking-widest uppercase font-medium">Enterprise Dashboard v3.0</p>
+                <p class="text-textMuted text-xs mt-2">Professional API Management System</p>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold text-textSecondary mb-2 uppercase tracking-wider">Admin API Key</label>
+                    <input type="password" id="admin-key-input" class="input-cyber w-full p-4 rounded-xl text-center font-mono text-primary text-lg" placeholder="•••••••••••••">
+                </div>
+                <button onclick="login()" class="btn-cyber w-full text-white font-black py-4 rounded-xl uppercase tracking-widest text-sm font-bold">
+                    <i class="fas fa-lock-open mr-2"></i> Initialize Access
+                </button>
+                <p id="login-error" class="text-danger text-sm text-center hidden font-mono font-medium">
+                    <i class="fas fa-exclamation-circle mr-2"></i>Authentication Failed: Invalid Admin Key
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[110] space-y-2"></div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard-content" class="hidden">
+        <!-- Header -->
+        <header class="cyber-card p-4 mb-6">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+                            <i class="fas fa-server text-primary text-xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-black tracking-tight">MUTANOX <span class="text-primary neon-text">ENTERPRISE</span></h1>
+                            <p class="text-textMuted text-xs font-mono">api.mutanox.io // v3.0.0 // Enterprise</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Auto-refresh Toggle -->
+                    <div class="flex items-center gap-2 cyber-card px-4 py-2.5 rounded-xl">
+                        <span class="text-textMuted text-xs font-semibold uppercase tracking-wider">Auto-refresh</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="auto-refresh-toggle" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                        <span id="refresh-rate" class="text-primary text-xs font-mono font-bold">2s</span>
+                    </div>
+
+                    <!-- Refresh Button -->
+                    <button onclick="forceRefresh()" class="cyber-card px-4 py-2.5 rounded-xl hover:bg-primary/20 transition-all text-primary group">
+                        <i class="fas fa-sync-alt text-lg group-hover:rotate-180 transition-transform duration-500" id="refresh-icon"></i>
+                    </button>
+
+                    <!-- Logout -->
+                    <button onclick="logout()" class="cyber-card px-4 py-2.5 rounded-xl hover:bg-danger/20 transition-all text-danger group">
+                        <i class="fas fa-power-off text-lg group-hover:scale-110 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <div class="metric-card cyber-card p-6 bg-gradient-to-br from-surface/80 to-background/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-textMuted text-xs font-bold uppercase tracking-wider mb-1">Total Requests</p>
+                        <h2 id="stat-total" class="text-4xl font-black font-mono">0</h2>
+                    </div>
+                    <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-chart-line text-primary text-xl"></i>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 text-xs">
+                    <span class="text-primary font-bold"><i class="fas fa-bolt mr-1"></i><span id="stat-rate">0</span>/s</span>
+                    <span class="text-textMuted">current rate</span>
+                </div>
+            </div>
+
+            <div class="metric-card cyber-card p-6 bg-gradient-to-br from-surface/80 to-background/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-textMuted text-xs font-bold uppercase tracking-wider mb-1">Active Keys</p>
+                        <h2 id="stat-keys" class="text-4xl font-black font-mono text-primary">0</h2>
+                    </div>
+                    <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-key text-primary text-xl"></i>
+                    </div>
+                </div>
+                <div class="text-xs text-textMuted">
+                    <span class="text-textSecondary">Total:</span> <span id="stat-total-keys" class="font-mono">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card cyber-card p-6 bg-gradient-to-br from-surface/80 to-background/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-textMuted text-xs font-bold uppercase tracking-wider mb-1">Endpoint Hits</p>
+                        <h2 id="stat-endpoints" class="text-4xl font-black font-mono text-secondary">0</h2>
+                    </div>
+                    <div class="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-network-wired text-secondary text-xl"></i>
+                    </div>
+                </div>
+                <div class="text-xs text-textMuted">
+                    <span class="text-textSecondary">Types:</span> <span id="stat-types" class="font-mono">0</span>
+                </div>
+            </div>
+
+            <div class="metric-card cyber-card p-6 bg-gradient-to-br from-surface/80 to-background/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-textMuted text-xs font-bold uppercase tracking-wider mb-1">System Uptime</p>
+                        <h2 id="stat-uptime" class="text-4xl font-black font-mono text-warning">0s</h2>
+                    </div>
+                    <div class="w-12 h-12 bg-warning/10 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-clock text-warning text-xl"></i>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="status-pulse w-2.5 h-2.5 bg-primary rounded-full"></span>
+                    <span class="text-primary font-semibold uppercase tracking-wider">ONLINE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs Content -->
+        <div class="bg-surface/30 backdrop-blur-sm rounded-2xl p-1 mb-6 flex gap-1 overflow-x-auto">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </button>
+            <button onclick="switchTab('keys')" id="tab-keys" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider text-textSecondary">
+                <i class="fas fa-key"></i> API Keys
+            </button>
+            <button onclick="switchTab('endpoints')" id="tab-endpoints" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider text-textSecondary">
+                <i class="fas fa-network-wired"></i> Endpoints
+            </button>
+            <button onclick="switchTab('logs')" id="tab-logs" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider text-textSecondary">
+                <i class="fas fa-terminal"></i> Logs
+            </button>
+            <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold uppercase tracking-wider text-textSecondary">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </div>
+
+        <!-- Dashboard Tab Content -->
+        <div id="content-dashboard" class="mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Endpoint Statistics -->
+                <div class="cyber-card">
+                    <div class="p-5 border-b border-border flex justify-between items-center">
+                        <h3 class="text-lg font-black flex items-center gap-2">
+                            <i class="fas fa-chart-pie text-primary"></i>
+                            Endpoint Distribution
+                        </h3>
+                        <div class="flex gap-2">
+                            <select id="chart-type" onchange="updateChartType()" class="bg-surface border border-border rounded-lg px-3 py-1.5 text-xs font-medium">
+                                <option value="doughnut">Doughnut</option>
+                                <option value="bar">Bar Chart</option>
+                                <option value="line">Line Chart</option>
+                                <option value="radar">Radar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="chart-container">
+                                <canvas id="endpointChart"></canvas>
+                            </div>
+                            <div id="endpoint-list" class="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                                <div class="flex items-center justify-center h-[300px]">
+                                    <div class="text-center">
+                                        <i class="fas fa-chart-pie text-3xl text-textMuted mb-3"></i>
+                                        <p class="text-textMuted text-sm">Aguardando dados de endpoints...</p>
+                                        <p class="text-textMuted text-xs">As requisições aparecerão aqui</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Request Timeline Chart -->
+                <div class="cyber-card">
+                    <div class="p-5 border-b border-border flex justify-between items-center">
+                        <h3 class="text-lg font-black flex items-center gap-2">
+                            <i class="fas fa-chart-area text-secondary"></i>
+                            Request Timeline
+                        </h3>
+                        <div class="flex gap-2 text-xs">
+                            <span class="text-textMuted">Últimos 20 pontos</span>
+                            <span class="status-pulse w-2 h-2 bg-success rounded-full"></span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <div class="chart-container">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="cyber-card">
+                <div class="p-5 border-b border-border">
+                    <h3 class="text-lg font-black flex items-center gap-2">
+                        <i class="fas fa-rocket text-primary"></i>
+                        Quick Actions
+                    </h3>
+                </div>
+                <div class="p-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <button onclick="openCreateModal()" class="w-full cyber-card p-5 text-left hover:bg-primary/20 transition-all group rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-all">
+                                    <i class="fas fa-plus text-primary text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-sm">Generate Key</p>
+                                    <p class="text-textMuted text-xs">Create new access credential</p>
+                                </div>
+                            </div>
+                        </button>
+                        <button onclick="exportAllKeys()" class="w-full cyber-card p-5 text-left hover:bg-secondary/20 transition-all group rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center group-hover:bg-secondary/20 transition-all">
+                                    <i class="fas fa-download text-secondary text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-sm">Export Keys</p>
+                                    <p class="text-textMuted text-xs">Download all API keys</p>
+                                </div>
+                            </div>
+                        </button>
+                        <button onclick="clearLogs()" class="w-full cyber-card p-5 text-left hover:bg-warning/20 transition-all group rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-warning/10 rounded-xl flex items-center justify-center group-hover:bg-warning/20 transition-all">
+                                    <i class="fas fa-broom text-warning text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-sm">Clear Logs</p>
+                                    <p class="text-textMuted text-xs">Clear terminal history</p>
+                                </div>
+                            </div>
+                        </button>
+                        <button onclick="exportStats()" class="w-full cyber-card p-5 text-left hover:bg-success/20 transition-all group rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center group-hover:bg-success/20 transition-all">
+                                    <i class="fas fa-file-export text-success text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-sm">Export Stats</p>
+                                    <p class="text-textMuted text-xs">Download statistics report</p>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Keys Tab Content -->
+        <div id="content-keys" class="hidden mb-6">
+            <div class="cyber-card">
+                <div class="p-5 border-b border-border flex justify-between items-center">
+                    <h3 class="text-lg font-black flex items-center gap-2">
+                        <i class="fas fa-key text-primary"></i>
+                        API Keys Management
+                    </h3>
+                    <button onclick="openCreateModal()" class="btn-cyber-sm text-white px-5 py-2.5 rounded-xl font-bold text-sm">
+                        <i class="fas fa-plus mr-2"></i>Generate Key
+                    </button>
+                </div>
+                <div class="p-5">
+                    <div id="keys-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2">
+                        <div class="flex items-center justify-center col-span-2 py-12">
+                            <div class="text-center">
+                                <i class="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+                                <p class="text-textMuted text-lg">Loading API Keys...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Endpoints Tab Content -->
+        <div id="content-endpoints" class="hidden mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Endpoint List -->
+                <div class="lg:col-span-2 cyber-card">
+                    <div class="p-5 border-b border-border">
+                        <h3 class="text-lg font-black flex items-center gap-2">
+                            <i class="fas fa-network-wired text-primary"></i>
+                            Endpoints Configuration
+                        </h3>
+                    </div>
+                    <div class="p-5">
+                        <div id="endpoints-management" class="space-y-3">
+                            <div class="flex items-center justify-center py-12">
+                                <div class="text-center">
+                                    <i class="fas fa-server text-3xl text-textMuted mb-3"></i>
+                                    <p class="text-textMuted text-sm">Loading endpoints...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Endpoint Stats -->
+                <div class="cyber-card">
+                    <div class="p-5 border-b border-border">
+                        <h3 class="text-lg font-black flex items-center gap-2">
+                            <i class="fas fa-chart-bar text-secondary"></i>
+                            Endpoint Stats
+                        </h3>
+                    </div>
+                    <div class="p-5">
+                        <div id="endpoints-stats" class="space-y-4">
+                            <div class="text-center text-textMuted">
+                                <i class="fas fa-chart-pie text-2xl mb-2"></i>
+                                <p class="text-sm">Selecione um endpoint para ver estatísticas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Tab Content -->
+        <div id="content-logs" class="hidden mb-6">
+            <div class="cyber-card">
+                <div class="p-5 border-b border-border flex justify-between items-center">
+                    <h3 class="text-lg font-black flex items-center gap-2">
+                        <i class="fas fa-terminal text-primary"></i>
+                        System Logs
+                    </h3>
+                    <div class="flex gap-2">
+                        <button onclick="toggleLogFilter('all')" id="filter-all" class="log-filter active px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary/20 text-primary border border-primary/30">ALL</button>
+                        <button onclick="toggleLogFilter('success')" id="filter-success" class="log-filter px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-textMuted hover:bg-success/20 border border-border hover:border-success/30">SUCCESS</button>
+                        <button onclick="toggleLogFilter('error')" id="filter-error" class="log-filter px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-textMuted hover:bg-danger/20 border border-border hover:border-danger/30">ERROR</button>
+                        <button onclick="clearLogs()" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider text-textMuted hover:bg-warning/20 border border-border hover:border-warning/30">
+                            <i class="fas fa-trash mr-1"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div id="terminal" class="terminal p-5 h-[500px] overflow-y-auto">
+                    <div class="text-textMuted text-center py-12">
+                        <i class="fas fa-terminal text-4xl mb-4"></i>
+                        <p>Aguardando logs do sistema...</p>
+                        <p class="text-textMuted text-sm mt-2">As requisições e logs aparecerão aqui em tempo real</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab Content -->
+        <div id="content-settings" class="hidden mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="cyber-card">
+                    <div class="p-5 border-b border-border">
+                        <h3 class="text-lg font-black flex items-center gap-2">
+                            <i class="fas fa-cog text-primary"></i>
+                            Dashboard Settings
+                        </h3>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-textSecondary mb-2">Refresh Rate</label>
+                            <select id="refresh-rate-select" onchange="changeRefreshRate()" class="input-cyber w-full p-3 rounded-lg">
+                                <option value="1000">1 segundo</option>
+                                <option value="2000" selected>2 segundos</option>
+                                <option value="5000">5 segundos</option>
+                                <option value="10000">10 segundos</option>
+                                <option value="30000">30 segundos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-textSecondary mb-2">Chart Animation</label>
+                            <select id="chart-animation-select" onchange="changeChartAnimation()" class="input-cyber w-full p-3 rounded-lg">
+                                <option value="true">Enabled</option>
+                                <option value="false">Disabled</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="cyber-card">
+                    <div class="p-5 border-b border-border">
+                        <h3 class="text-lg font-black flex items-center gap-2">
+                            <i class="fas fa-database text-secondary"></i>
+                            System Information
+                        </h3>
+                    </div>
+                    <div class="p-5 space-y-3">
+                        <div class="flex justify-between items-center py-2 border-b border-border/50">
+                            <span class="text-textSecondary text-sm">API Version</span>
+                            <span class="font-mono text-sm text-textPrimary">v3.0.0</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-border/50">
+                            <span class="text-textSecondary text-sm">Dashboard Version</span>
+                            <span class="font-mono text-sm text-textPrimary">v2.0.0</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-border/50">
+                            <span class="text-textSecondary text-sm">Server Status</span>
+                            <span class="text-success text-sm font-semibold">ONLINE</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-textSecondary text-sm">Server Time</span>
+                            <span id="server-time" class="font-mono text-sm text-textPrimary">--:--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Key Modal -->
+    <div id="create-modal" class="fixed inset-0 z-[120] hidden flex items-center justify-center bg-black/90 modal-overlay">
+        <div class="cyber-card p-8 w-full max-w-lg border-2 border-primary/30 neon-glow max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-black text-primary neon-text flex items-center gap-3">
+                    <i class="fas fa-key"></i>
+                    Generate API Key
+                </h3>
+                <button onclick="closeCreateModal()" class="text-textMuted hover:text-danger transition-all">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-textSecondary mb-2">Owner Name</label>
+                    <input type="text" id="new-owner" class="input-cyber w-full p-4 rounded-lg" placeholder="Ex: Development Team">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-textSecondary mb-2">Access Level</label>
+                    <select id="new-role" class="input-cyber w-full p-4 rounded-lg">
+                        <option value="user">Standard User</option>
+                        <option value="admin">System Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-textSecondary mb-2">Expiration (Optional)</label>
+                    <select id="new-expiration" class="input-cyber w-full p-4 rounded-lg">
+                        <option value="">Never</option>
+                        <option value="30">30 Days</option>
+                        <option value="90">90 Days</option>
+                        <option value="180">180 Days</option>
+                        <option value="365">1 Year</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-textSecondary mb-2">Description (Optional)</label>
+                    <input type="text" id="new-description" class="input-cyber w-full p-4 rounded-lg" placeholder="Ex: Key for production API">
+                </div>
+                <div class="flex gap-4 mt-6">
+                    <button onclick="createKey()" class="flex-1 btn-cyber text-white font-bold py-3 rounded-xl">
+                        <i class="fas fa-check mr-2"></i> Generate Key
+                    </button>
+                    <button onclick="closeCreateModal()" class="flex-1 cyber-card py-3 rounded-xl hover:bg-surfaceLight transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Endpoint Management Modal -->
+    <div id="endpoint-modal" class="fixed inset-0 z-[120] hidden flex items-center justify-center bg-black/90 modal-overlay">
+        <div class="cyber-card p-8 w-full max-w-lg border-2 border-secondary/30 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="endpoint-modal-title" class="text-2xl font-black text-secondary flex items-center gap-3">
+                    <i class="fas fa-network-wired"></i>
+                    Endpoint Configuration
+                </h3>
+                <button onclick="closeEndpointModal()" class="text-textMuted hover:text-danger transition-all">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="endpoint-modal-content" class="space-y-5">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Management Modal -->
+    <div id="key-modal" class="fixed inset-0 z-[120] hidden flex items-center justify-center bg-black/90 modal-overlay">
+        <div class="cyber-card p-8 w-full max-w-lg border-2 border-primary/30 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-black text-primary neon-text flex items-center gap-3">
+                    <i class="fas fa-key"></i>
+                    Key Management
+                </h3>
+                <button onclick="closeKeyModal()" class="text-textMuted hover:text-danger transition-all">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="key-modal-content" class="space-y-5">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = '';
+        let adminKey = localStorage.getItem('mutanox_admin_key') || '';
+        let refreshInterval = null;
+        let refreshRate = 2000;
+        let lastData = null;
+        let chartAnimation = true;
+        let endpointCharts = {};
+        let timelineChart = null;
+        let logFilter = 'all';
+        let currentTab = 'dashboard';
+
+        // Endpoint configurations
+        const endpointConfigs = {
+            'cpf': {
+                name: 'Consultar CPF',
+                description: 'Consulta completa de CPF com dados básicos, econômicos e endereços',
+                method: 'GET',
+                path: '/api/consultas',
+                params: 'tipo=cpf&cpf=XXX',
+                icon: 'fa-id-card',
+                color: '#10b981'
+            },
+            'nome': {
+                name: 'Consultar Nome',
+                description: 'Busca por nome completo com múltiplos resultados',
+                method: 'GET',
+                path: '/api/consultas',
+                params: 'tipo=nome&q=XXX',
+                icon: 'fa-user',
+                color: '#6366f1'
+            },
+            'numero': {
+                name: 'Consultar Telefone',
+                description: 'Consulta de telefone com dados da pessoa associada',
+                method: 'GET',
+                path: '/api/consultas',
+                params: 'tipo=numero&q=XXX',
+                icon: 'fa-phone',
+                color: '#f59e0b'
+            }
+        };
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (adminKey) {
+                showDashboard();
+            }
+        });
+
+        // Login function
+        async function login() {
+            const key = document.getElementById('admin-key-input').value;
+            if (!key) {
+                showToast('error', 'Please enter an API key');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/validate?apikey=${key}`);
+                if (response.ok) {
+                    adminKey = key;
+                    localStorage.setItem('mutanox_admin_key', key);
+                    showToast('success', 'Authentication successful');
+                    showDashboard();
+                } else {
+                    const errorEl = document.getElementById('login-error');
+                    errorEl.classList.remove('hidden');
+                    setTimeout(() => errorEl.classList.add('hidden'), 3000);
+                }
+            } catch (error) {
+                showToast('error', 'Connection error: ' + error.message);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('mutanox_admin_key');
+            adminKey = '';
+            clearInterval(refreshInterval);
+            location.reload();
+        }
+
+        function showDashboard() {
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.remove('hidden');
+            initCharts();
+            startAutoRefresh();
+            updateServerTime();
+        }
+
+        // Tab switching
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Hide all content
+            ['dashboard', 'keys', 'endpoints', 'logs', 'settings'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('active');
+            });
+            
+            // Show selected content
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        // Charts initialization
+        function initCharts() {
+            // Endpoint Chart
+            const endpointCtx = document.getElementById('endpointChart').getContext('2d');
+            endpointCharts = {
+                doughnut: new Chart(endpointCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: [
+                                '#10b981', '#6366f1', '#f59e0b', '#ef4444',
+                                '#8b5cf6', '#06b6d4', '#f97316'
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                titleColor: '#f8fafc',
+                                bodyColor: '#94a3b8',
+                                borderColor: '#334155',
+                                borderWidth: 1,
+                                padding: 12,
+                                cornerRadius: 8
+                            }
+                        },
+                        cutout: '70%',
+                        animation: {
+                            animateScale: chartAnimation,
+                            animateRotate: chartAnimation
+                        }
+                    }
+                }),
+                bar: new Chart(endpointCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Requests',
+                            data: [],
+                            backgroundColor: '#10b981',
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#1e293b',
+                                titleColor: '#f8fafc',
+                                bodyColor: '#94a3b8'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(51, 65, 85, 0.3)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                }),
+                line: new Chart(endpointCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Requests',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(51, 65, 85, 0.3)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            }
+                        }
+                    }
+                }),
+                radar: new Chart(endpointCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Requests',
+                            data: [],
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            borderColor: '#10b981',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(51, 65, 85, 0.3)'
+                                },
+                                angleLines: {
+                                    color: 'rgba(51, 65, 85, 0.3)'
+                                },
+                                pointLabels: {
+                                    color: '#94a3b8',
+                                    font: {
+                                        size: 11
+                                    }
+                                },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    backdropColor: '#1e293b'
+                                }
+                            }
+                        }
+                    }
+                })
+            };
+
+            // Timeline Chart
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            timelineChart = new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Total Requests',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#94a3b8',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 12,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.3)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.3)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        // Auto refresh
+        function startAutoRefresh() {
+            refreshData();
+            refreshInterval = setInterval(refreshData, refreshRate);
+        }
+
+        // Toggle auto refresh
+        document.getElementById('auto-refresh-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                refreshInterval = setInterval(refreshData, refreshRate);
+            } else {
+                clearInterval(refreshInterval);
+            }
+        });
+
+        // Force refresh
+        function forceRefresh() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('fa-spin');
+            refreshData().finally(() => {
+                icon.classList.remove('fa-spin');
+            });
+        }
+
+        // Change refresh rate
+        function changeRefreshRate() {
+            refreshRate = parseInt(document.getElementById('refresh-rate-select').value);
+            document.getElementById('refresh-rate').textContent = refreshRate / 1000 + 's';
+            
+            // Restart interval
+            clearInterval(refreshInterval);
+            const autoRefresh = document.getElementById('auto-refresh-toggle').checked;
+            if (autoRefresh) {
+                refreshInterval = setInterval(refreshData, refreshRate);
+            }
+        }
+
+        // Change chart animation
+        function changeChartAnimation() {
+            chartAnimation = document.getElementById('chart-animation-select').value === 'true';
+            
+            // Update chart options
+            if (endpointCharts) {
+                Object.values(endpointCharts).forEach(chart => {
+                    chart.options.animation.animateScale = chartAnimation;
+                    chart.options.animation.animateRotate = chartAnimation;
+                    chart.update();
+                });
+            }
+        }
+
+        // Update server time
+        function updateServerTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('server-time').textContent = timeStr;
+        }
+        setInterval(updateServerTime, 1000);
+
+        // Main refresh function
+        async function refreshData() {
+            try {
+                const response = await fetch(`/api/admin/stats-readonly?apikey=${adminKey}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch stats');
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error('Invalid response');
+                }
+
+                // Check if data changed
+                const newData = JSON.stringify(data);
+                if (lastData === newData) {
+                    return; // Skip update if no change
+                }
+                lastData = newData;
+
+                updateStats(data);
+                
+                if (currentTab === 'keys') {
+                    updateKeys(data.keys);
+                } else if (currentTab === 'endpoints') {
+                    updateEndpoints(data.endpointHits);
+                } else if (currentTab === 'logs') {
+                    updateLogs(data);
+                } else if (currentTab === 'dashboard') {
+                    updateKeys(data.keys);
+                    updateEndpoints(data.endpointHits);
+                }
+
+            } catch (error) {
+                console.error('Refresh error:', error);
+            }
+        }
+
+        // Update stats
+        function updateStats(data) {
+            const currentTotal = data.totalRequests || 0;
+            
+            // Calculate rate
+            const timeDiff = Date.now() - (data.startTime || Date.now());
+            const rate = timeDiff > 0 ? (currentTotal / (timeDiff / 1000)).toFixed(2) : '0';
+            
+            document.getElementById('stat-total').textContent = currentTotal.toLocaleString();
+            document.getElementById('stat-rate').textContent = rate;
+
+            const activeKeys = Object.values(data.keys).filter(k => k.active !== false).length;
+            document.getElementById('stat-keys').textContent = activeKeys;
+            document.getElementById('stat-total-keys').textContent = Object.keys(data.keys).length;
+
+            const totalHits = Object.values(data.endpointHits).reduce((sum, val) => sum + val, 0);
+            document.getElementById('stat-endpoints').textContent = totalHits.toLocaleString();
+            document.getElementById('stat-types').textContent = Object.keys(data.endpointHits).length;
+
+            // Update uptime - FIX FOR NaN
+            if (data.startTime && !isNaN(data.startTime)) {
+                const uptimeSeconds = Math.floor((Date.now() - data.startTime) / 1000);
+                const hours = Math.floor(uptimeSeconds / 3600);
+                const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+                const seconds = uptimeSeconds % 60;
+                document.getElementById('stat-uptime').textContent = 
+                    `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+            }
+
+            // Update timeline
+            updateTimeline(currentTotal);
+        }
+
+        // Update timeline chart
+        function updateTimeline(totalRequests) {
+            const now = new Date();
+            const timeLabel = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            // Add to history
+            requestHistory.push({ time: timeLabel, requests: totalRequests });
+            
+            // Keep only last 20 data points
+            if (requestHistory.length > 20) {
+                requestHistory.shift();
+            }
+
+            // Update chart
+            timelineChart.data.labels = requestHistory.map(h => h.time);
+            timelineChart.data.datasets[0].data = requestHistory.map(h => h.requests);
+            timelineChart.update('none');
+        }
+
+        // Update keys
+        function updateKeys(keys) {
+            const container = document.getElementById('keys-list');
+            const keysArray = Object.entries(keys);
+
+            if (keysArray.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center col-span-2 py-12">
+                        <i class="fas fa-key text-4xl text-textMuted mb-4"></i>
+                        <p class="text-textMuted">Nenhuma API key encontrada</p>
+                        <button onclick="openCreateModal()" class="btn-cyber-sm text-white px-5 py-2.5 rounded-xl font-bold text-sm mt-4">
+                            <i class="fas fa-plus mr-2"></i> Criar Primeira Key
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = keysArray.map(([key, info]) => {
+                const isActive = info.active !== false;
+                const isExpired = info.expirationDate && new Date(info.expirationDate) < new Date();
+                
+                return `
+                    <div class="key-card cyber-card p-5 rounded-xl ${!isActive ? 'opacity-50' : ''}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 ${info.role === 'admin' ? 'bg-danger/10' : 'bg-primary/10'} rounded-xl flex items-center justify-center">
+                                    <i class="fas ${info.role === 'admin' ? 'fa-shield-alt' : 'fa-key'} ${info.role === 'admin' ? 'text-danger' : 'text-primary'}"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-base">${info.owner}</p>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span class="text-xs px-2 py-0.5 rounded-lg font-bold uppercase ${
+                                            info.role === 'admin' 
+                                                ? 'bg-danger/10 text-danger border border-danger/20' 
+                                                : 'bg-primary/10 text-primary border border-primary/20'
+                                        }">
+                                            ${info.role}
+                                        </span>
+                                        ${isExpired 
+                                            ? '<span class="text-xs px-2 py-0.5 rounded-lg font-bold uppercase bg-danger/10 text-danger border border-danger/20">EXPIRADO</span>'
+                                            : '<span class="text-xs px-2 py-0.5 rounded-lg font-bold uppercase bg-success/10 text-success border border-success/20">ATIVO</span>'
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="copyToClipboard('${key}')" class="copy-btn w-9 h-9 bg-surfaceLight rounded-lg flex items-center justify-center hover:bg-primary hover:text-white transition-all" title="Copiar Key">
+                                    <i class="fas fa-copy text-sm"></i>
+                                </button>
+                                <button onclick="openKeyModal('${key}')" class="w-9 h-9 bg-surfaceLight rounded-lg flex items-center justify-center hover:bg-secondary hover:text-white transition-all" title="Gerenciar">
+                                    <i class="fas fa-cog text-sm"></i>
+                                </button>
+                                <button onclick="toggleKey('${key}')" class="w-9 h-9 bg-surfaceLight rounded-lg flex items-center justify-center hover:bg-warning hover:text-white transition-all" title="${isActive ? 'Desativar' : 'Ativar'}">
+                                    <i class="fas fa-power-off text-sm"></i>
+                                </button>
+                                ${key !== adminKey ? `
+                                    <button onclick="deleteKey('${key}')" class="w-9 h-9 bg-surfaceLight rounded-lg flex items-center justify-center hover:bg-danger hover:text-white transition-all" title="Deletar">
+                                        <i class="fas fa-trash text-sm"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="cyber-card p-3 rounded-lg bg-black/30">
+                                <code class="text-xs text-primary break-all">${key.substring(0, 20)}${key.length > 20 ? '...' : ''}</code>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <p class="text-textMuted text-xs uppercase tracking-wider mb-1">Usage</p>
+                                <p class="font-mono text-lg">${info.usageCount || 0}</p>
+                            </div>
+                            <div>
+                                <p class="text-textMuted text-xs uppercase tracking-wider mb-1">Last Used</p>
+                                <p class="font-mono text-xs">${info.lastUsed ? new Date(info.lastUsed).toLocaleString('pt-BR') : 'Never'}</p>
+                            </div>
+                            <div class="col-span-2">
+                                <p class="text-textMuted text-xs uppercase tracking-wider mb-1">Created</p>
+                                <p class="font-mono text-xs">${new Date(info.createdAt).toLocaleString('pt-BR')}</p>
+                            </div>
+                            ${info.description ? `
+                                <div class="col-span-2">
+                                    <p class="text-textMuted text-xs uppercase tracking-wider mb-1">Description</p>
+                                    <p class="text-xs text-textPrimary">${info.description}</p>
+                                </div>
+                            ` : ''}
+                            ${info.expirationDate ? `
+                                <div class="col-span-2">
+                                    <p class="text-textMuted text-xs uppercase tracking-wider mb-1">Expiration</p>
+                                    <p class="font-mono text-xs ${isExpired ? 'text-danger' : 'text-primary'}">${new Date(info.expirationDate).toLocaleString('pt-BR')}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update endpoints
+        function updateEndpoints(endpointHits) {
+            const container = document.getElementById('endpoints-management');
+            const list = document.getElementById('endpoints-list');
+            const endpoints = Object.keys(endpointConfigs);
+
+            if (endpoints.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-network-wired text-4xl text-textMuted mb-4"></i>
+                        <p class="text-textMuted">Nenhum endpoint configurado</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = endpoints.map(endpoint => {
+                const config = endpointConfigs[endpoint];
+                const hits = endpointHits[endpoint] || 0;
+                const totalHits = Object.values(endpointHits).reduce((sum, val) => sum + val, 0);
+                const percentage = totalHits > 0 ? ((hits / totalHits) * 100).toFixed(1) : 0;
+                const isActive = hits > 0;
+
+                return `
+                    <div class="endpoint-item cyber-card p-4 rounded-xl ${!isActive ? 'disabled' : ''}" onclick="selectEndpoint('${endpoint}')">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 bg-${config.color}/10 rounded-xl flex items-center justify-center">
+                                <i class="fas ${config.icon} text-${config.color} text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-base">${config.name}</p>
+                                <p class="text-textMuted text-xs">${config.description}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-black text-lg font-mono">${hits}</p>
+                                <p class="text-textMuted text-xs">requests</p>
+                            </div>
+                        </div>
+                        <div class="progress-bar h-2">
+                            <div class="progress-fill h-full" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-2 text-xs text-textMuted">
+                            <span>${percentage}% do total</span>
+                            ${isActive ? '<span class="text-success"><i class="fas fa-circle text-[8px] mr-1"></i> Ativo</span>' : '<span class="text-textMuted"><i class="fas fa-circle text-[8px] mr-1"></i> Inativo</span>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Select endpoint
+        function selectEndpoint(endpoint) {
+            const config = endpointConfigs[endpoint];
+            
+            document.getElementById('endpoint-modal-title').innerHTML = `
+                <i class="fas ${config.icon} text-${config.color} mr-2"></i>
+                ${config.name}
+            `;
+            
+            document.getElementById('endpoint-modal-content').innerHTML = `
+                <div class="space-y-4">
+                    <div class="cyber-card p-4 rounded-xl">
+                        <p class="text-textMuted text-xs uppercase tracking-wider mb-2">Description</p>
+                        <p class="text-textPrimary">${config.description}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="cyber-card p-4 rounded-xl">
+                            <p class="text-textMuted text-xs uppercase tracking-wider mb-2">Method</p>
+                            <p class="font-mono text-${config.color}">${config.method}</p>
+                        </div>
+                        <div class="cyber-card p-4 rounded-xl">
+                            <p class="text-textMuted text-xs uppercase tracking-wider mb-2">Path</p>
+                            <p class="font-mono">${config.path}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="cyber-card p-4 rounded-xl">
+                        <p class="text-textMuted text-xs uppercase tracking-wider mb-2">Parameters</p>
+                        <p class="font-mono text-sm">${config.params}</p>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="testEndpoint('${endpoint}')" class="flex-1 btn-cyber-sm text-white px-4 py-2 rounded-xl font-bold text-sm">
+                            <i class="fas fa-play mr-2"></i> Testar Endpoint
+                        </button>
+                        <button onclick="closeEndpointModal()" class="flex-1 cyber-card py-2 rounded-xl hover:bg-surfaceLight transition-all">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('endpoint-modal').classList.remove('hidden');
+        }
+
+        // Test endpoint
+        async function testEndpoint(endpoint) {
+            const config = endpointConfigs[endpoint];
+            const testKey = Object.keys(loadApiKeysSync()).find(k => loadApiKeysSync()[k].role === 'user') || 'test-key';
+            
+            showToast('info', `Testing ${config.name}...`);
+            
+            try {
+                const response = await fetch(`${config.path}?${config.params.replace('XXX', '12345678900')}&apikey=${testKey}`);
+                if (response.ok) {
+                    showToast('success', `${config.name} está funcionando!`);
+                } else {
+                    showToast('error', `${config.name} retornou erro: ${response.status}`);
+                }
+            } catch (error) {
+                showToast('error', `Erro ao testar ${config.name}`);
+            }
+        }
+
+        function loadApiKeysSync() {
+            try {
+                const response = fetch('/api/admin/keys?apikey=' + adminKey);
+                return JSON.parse(response._body);
+            } catch (e) {
+                return {};
+            }
+        }
+
+        // Update logs
+        async function updateLogs(stats) {
+            try {
+                const response = await fetch(`/api/admin/logs?apikey=${adminKey}`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+                if (!data.success) return;
+
+                const terminal = document.getElementById('terminal');
+                
+                if (data.logs.length === 0) {
+                    terminal.innerHTML = `
+                        <div class="text-center py-12">
+                            <i class="fas fa-check-circle text-success text-4xl mb-4"></i>
+                            <p>Nenhum log registrado ainda</p>
+                            <p class="text-textMuted text-sm mt-2">As requisições aparecerão aqui</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Filter logs
+                const filteredLogs = logFilter === 'all' 
+                    ? data.logs 
+                    : data.logs.filter(log => log.type.toLowerCase() === logFilter);
+
+                terminal.innerHTML = filteredLogs.map(log => {
+                    const logClass = `log-${log.type.toLowerCase()}`;
+                    const timestamp = new Date(log.timestamp).toLocaleTimeString('pt-BR');
+                    return `
+                        <div class="log-entry ${logClass}">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-mono text-xs text-textMuted">[${timestamp}]</span>
+                                <span class="font-bold uppercase text-xs tracking-wider">${log.type}</span>
+                            </div>
+                            <p class="text-sm">${log.message}</p>
+                            ${log.details ? `<p class="text-xs text-textMuted font-mono mt-1">${log.details}</p>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Logs error:', error);
+            }
+        }
+
+        // Toggle log filter
+        function toggleLogFilter(filter) {
+            logFilter = filter;
+            
+            // Update button states
+            document.querySelectorAll('.log-filter').forEach(btn => {
+                btn.classList.remove('active', 'bg-primary/20', 'text-primary');
+                btn.classList.add('text-textMuted');
+            });
+            
+            event.target.classList.add('active', 'bg-primary/20', 'text-primary');
+            event.target.classList.remove('text-textMuted');
+            
+            // Refresh logs
+            refreshData();
+        }
+
+        // Key management functions
+        async function createKey() {
+            const owner = document.getElementById('new-owner').value;
+            const role = document.getElementById('new-role').value;
+            const expiration = document.getElementById('new-expiration').value;
+            const description = document.getElementById('new-description').value;
+
+            if (!owner) {
+                showToast('error', 'Please enter an owner name');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/keys?owner=${encodeURIComponent(owner)}&role=${role}&apikey=${adminKey}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('success', `API Key Generated: ${data.key.substring(0, 10)}...`);
+                    copyToClipboard(data.key);
+                    closeCreateModal();
+                    refreshData();
+                } else {
+                    showToast('error', 'Failed to generate key: ' + data.error);
+                }
+            } catch (error) {
+                showToast('error', 'Error: ' + error.message);
+            }
+        }
+
+        async function toggleKey(key) {
+            try {
+                const response = await fetch(`/api/admin/toggle?target=${encodeURIComponent(key)}&apikey=${adminKey}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('success', `Key status changed`);
+                    refreshData();
+                }
+            } catch (error) {
+                showToast('error', 'Error: ' + error.message);
+            }
+        }
+
+        async function deleteKey(key) {
+            if (key === adminKey) {
+                showToast('error', 'Cannot delete admin key');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this API key?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/keys?target=${encodeURIComponent(key)}&apikey=${adminKey}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('success', 'API key deleted');
+                    refreshData();
+                }
+            } catch (error) {
+                showToast('error', 'Error: ' + error.message);
+            }
+        }
+
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('success', 'Copied to clipboard!');
+            } catch (error) {
+                showToast('error', 'Failed to copy');
+            }
+        }
+
+        async function exportAllKeys() {
+            try {
+                const response = await fetch(`/api/admin/keys?apikey=${adminKey}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const exportData = {
+                        timestamp: new Date().toISOString(),
+                        totalKeys: Object.keys(data.keys).length,
+                        keys: data.keys
+                    };
+
+                    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `mutanox-keys-${Date.now()}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    showToast('success', 'Keys exported successfully');
+                }
+            } catch (error) {
+                showToast('error', 'Error exporting keys: ' + error.message);
+            }
+        }
+
+        // Modal functions
+        function openCreateModal() {
+            document.getElementById('create-modal').classList.remove('hidden');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('create-modal').classList.add('hidden');
+            document.getElementById('new-owner').value = '';
+            document.getElementById('new-description').value = '';
+        }
+
+        function closeEndpointModal() {
+            document.getElementById('endpoint-modal').classList.add('hidden');
+        }
+
+        function closeKeyModal() {
+            document.getElementById('key-modal').classList.add('hidden');
+        }
+
+        // Other functions
+        function clearLogs() {
+            document.getElementById('terminal').innerHTML = `
+                <div class="text-center py-12">
+                    <i class="fas fa-check-circle text-success text-4xl mb-4"></i>
+                    <p>Logs limpos com sucesso</p>
+                </div>
+            `;
+            showToast('success', 'Logs cleared');
+        }
+
+        function exportStats() {
+            if (!lastData) {
+                showToast('error', 'No data to export');
+                return;
+            }
+
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                stats: lastData
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mutanox-stats-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('success', 'Statistics exported');
+        }
+
+        function updateChartType() {
+            const chartType = document.getElementById('chart-type').value;
+            endpointCharts[chartType].update();
+        }
+
+        // Toast notification
+        function showToast(type, message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-success text-black',
+                error: 'bg-danger text-white',
+                info: 'bg-secondary text-white',
+                warning: 'bg-warning text-black'
+            };
+
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle',
+                warning: 'fa-exclamation-triangle'
+            };
+
+            toast.className = `toast ${colors[type]} px-5 py-3 rounded-xl flex items-center gap-3 shadow-xl`;
+            toast.innerHTML = `
+                <i class="fas ${icons[type]} text-lg"></i>
+                <span class="font-semibold text-sm">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Enter key on login
+        document.getElementById('admin-key-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+
+        // Global variable for request history
+        let requestHistory = [];
+    </script>
+</body>
+</html>

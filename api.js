@@ -18,8 +18,9 @@ const { URL, URLSearchParams } = require('url');
 
 const PORT = 8080;
 const API_KEYS_FILE = path.join(__dirname, 'api_keys.json');
+const STATS_FILE = path.join(__dirname, 'api_stats.json');
 const ADMIN_KEY = 'MutanoX3397';
-const DASHBOARD_PATH = path.join(__dirname, 'dashboards', 'dashboard_profissional.html');
+const DASHBOARD_PATH = path.join(__dirname, 'dashboards', 'dashboard_enterprise.html');
 
 // Telemetria e Logs REAIS
 let liveLogs = [];
@@ -28,6 +29,36 @@ let systemStats = {
     totalRequests: 0,
     endpointHits: {}
 };
+
+// Carregar estatísticas do arquivo
+function loadStats() {
+    if (fs.existsSync(STATS_FILE)) {
+        try {
+            const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+            return {
+                startTime: stats.startTime || Date.now(),
+                totalRequests: stats.totalRequests || 0,
+                endpointHits: stats.endpointHits || {}
+            };
+        } catch (error) {
+            console.error('[loadStats] Erro ao carregar stats:', error.message);
+        }
+    }
+    return null;
+}
+
+// Salvar estatísticas no arquivo
+function saveStats() {
+    try {
+        fs.writeFileSync(STATS_FILE, JSON.stringify({
+            startTime: systemStats.startTime,
+            totalRequests: systemStats.totalRequests,
+            endpointHits: systemStats.endpointHits
+        }, null, 2));
+    } catch (error) {
+        console.error('[saveStats] Erro ao salvar stats:', error.message);
+    }
+}
 
 // Função para ler estatísticas sem incrementar
 function getStatsOnly() {
@@ -39,6 +70,14 @@ function getStatsOnly() {
         totalRequests: systemStats.totalRequests,
         uptime: Date.now() - systemStats.startTime
     };
+}
+
+// Inicializar stats do arquivo
+const loadedStats = loadStats();
+if (loadedStats) {
+    systemStats.startTime = loadedStats.startTime;
+    systemStats.totalRequests = loadedStats.totalRequests;
+    systemStats.endpointHits = loadedStats.endpointHits;
 }
 
 const colors = {
@@ -87,6 +126,7 @@ function validateAndTrackKey(key, skipIncrement = false) {
             keyData.lastUsed = new Date().toISOString();
             saveApiKeys(keys);
             systemStats.totalRequests++;
+            saveStats(); // Salvar estatísticas sempre que incrementar
         }
         return { valid: true, isAdmin: keyData.role === 'admin', owner: keyData.owner };
     }
@@ -876,6 +916,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       systemStats.endpointHits[tipo.toLowerCase()] = (systemStats.endpointHits[tipo.toLowerCase()] || 0) + 1;
+      saveStats(); // Salvar endpointHits persistentemente
       let result;
 
       switch (tipo.toLowerCase()) {

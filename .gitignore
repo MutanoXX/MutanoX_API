@@ -13,6 +13,7 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+yarn-error.log*
 
 # OS files
 .DS_Store
@@ -32,3 +33,7 @@ Thumbs.db
 
 # Test output
 coverage/
+
+# API Data (keep in local only, don't commit to GitHub)
+api_stats.json
+api_keys.json
