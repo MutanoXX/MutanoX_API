@@ -78,14 +78,16 @@ function loadApiKeys() {
 
 function saveApiKeys(keys) { fs.writeFileSync(API_KEYS_FILE, JSON.stringify(keys, null, 2)); }
 
-function validateAndTrackKey(key) {
+function validateAndTrackKey(key, skipIncrement = false) {
     const keys = loadApiKeys();
     const keyData = keys[key];
     if (keyData && (keyData.active === undefined || keyData.active === true)) {
-        keyData.usageCount = (keyData.usageCount || 0) + 1;
-        keyData.lastUsed = new Date().toISOString();
-        saveApiKeys(keys);
-        systemStats.totalRequests++;
+        if (!skipIncrement) {
+            keyData.usageCount = (keyData.usageCount || 0) + 1;
+            keyData.lastUsed = new Date().toISOString();
+            saveApiKeys(keys);
+            systemStats.totalRequests++;
+        }
         return { valid: true, isAdmin: keyData.role === 'admin', owner: keyData.owner };
     }
     return { valid: false };
@@ -790,7 +792,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // AUTHENTICATION (NEW)
-  const auth = validateAndTrackKey(apiKey);
+  const auth = validateAndTrackKey(apiKey, path.startsWith('/api/admin/') ? true : false);
   const logMsg = `Usuário: ${auth.valid ? auth.owner : 'DESCONHECIDO'} | Rota: ${path}`;
   const logDetails = `Key: ${apiKey || 'Nenhuma'} | UA: ${userAgent}`;
 

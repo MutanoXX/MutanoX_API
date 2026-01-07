@@ -4,15 +4,15 @@
     "role": "admin",
     "active": true,
     "createdAt": "2026-01-07T00:00:00.000Z",
-    "usageCount": 23,
-    "lastUsed": "2026-01-07T18:59:55.164Z"
+    "usageCount": 36,
+    "lastUsed": "2026-01-07T19:02:42.775Z"
   },
   "test-key": {
     "owner": "Teste",
     "role": "user",
     "active": true,
-    "usageCount": 4,
-    "lastUsed": "2026-01-07T18:59:47.289Z",
+    "usageCount": 6,
+    "lastUsed": "2026-01-07T19:04:48.893Z",
     "createdAt": "2026-01-07T18:30:00.000Z"
   },
   "UserKey123": {
